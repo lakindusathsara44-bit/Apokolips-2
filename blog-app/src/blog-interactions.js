@@ -559,7 +559,7 @@ const SUPABASE_URL = "https://oqyfvvwplvbmmursbpkd.supabase.co";
   enhanceAll();
   restoreDeviceName();
   if ("serviceWorker" in navigator) {
-    navigator.serviceWorker.register("/blog-sw.js").catch(error => console.warn("Blog service worker registration failed:", error));
+    navigator.serviceWorker.register(new URL("./blog-sw.js", window.location.href)).catch(error => console.warn("Blog service worker registration failed:", error));
   }
   loadBlogNotifications();
   const notificationsChannel = supabaseClient.channel("apokolips-blog-notifications-" + visitorId)
