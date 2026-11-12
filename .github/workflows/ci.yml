@@ -1,0 +1,49 @@
+name: Apokolips CI
+
+on:
+  push:
+    branches:
+      - main
+      - "ci/**"
+  pull_request:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: apokolips-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify-static-site:
+    name: Verify static website
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.x"
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Install frontend dependencies
+        run: npm install --no-audit --no-fund
+
+      - name: Build Community static assets
+        run: npm run build:community
+
+      - name: Check required files, HTML references, and sitemap
+        run: python .github/scripts/verify_site.py
+
+      - name: Check JavaScript syntax
+        run: |
+          node --check script.js
+          node --check visitor-counter.js
