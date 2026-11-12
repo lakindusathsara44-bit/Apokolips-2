@@ -21,19 +21,19 @@ jobs:
 
       - name: Detect newly published blog photos
         env:
-          BEFORE_SHA: \${{ github.event.before }}
-          AFTER_SHA: \${{ github.sha }}
+          BEFORE_SHA: ${{ github.event.before }}
+          AFTER_SHA: ${{ github.sha }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ "\${BEFORE_SHA}" =~ ^0+$ ]]; then
+          if [[ "${BEFORE_SHA}" =~ ^0+$ ]]; then
             echo "Initial commit detected; skipping historical photo notifications."
             exit 0
           fi
-          git show "\${BEFORE_SHA}:blog.html" > /tmp/old-blog.html 2>/dev/null || true
-          git show "\${AFTER_SHA}:blog.html" > /tmp/new-blog.html
-          git show "\${BEFORE_SHA}:blog-app/src/App.jsx" > /tmp/old-blog-source.jsx 2>/dev/null || true
-          git show "\${AFTER_SHA}:blog-app/src/App.jsx" > /tmp/new-blog-source.jsx 2>/dev/null || true
+          git show "${BEFORE_SHA}:blog.html" > /tmp/old-blog.html 2>/dev/null || true
+          git show "${AFTER_SHA}:blog.html" > /tmp/new-blog.html
+          git show "${BEFORE_SHA}:blog-app/src/App.jsx" > /tmp/old-blog-source.jsx 2>/dev/null || true
+          git show "${AFTER_SHA}:blog-app/src/App.jsx" > /tmp/new-blog-source.jsx 2>/dev/null || true
           node > /tmp/new-blog-photos.txt <<'NODE'
           const fs = require("fs");
           const imagePattern = /\.(?:jpe?g|png|webp|gif)(?:[?#].*)?$/i;
@@ -71,22 +71,22 @@ jobs:
 
       - name: Notify previous blog commenters about each new photo
         env:
-          SUPABASE_FUNCTION_URL: \${{ secrets.APOKOLIPS_BLOG_PUSH_FUNCTION_URL }}
-          WEBHOOK_SECRET: \${{ secrets.APOKOLIPS_BLOG_WEBHOOK_SECRET }}
+          SUPABASE_FUNCTION_URL: ${{ secrets.APOKOLIPS_BLOG_PUSH_FUNCTION_URL }}
+          WEBHOOK_SECRET: ${{ secrets.APOKOLIPS_BLOG_WEBHOOK_SECRET }}
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -z "\${SUPABASE_FUNCTION_URL}" || -z "\${WEBHOOK_SECRET}" ]]; then
+          if [[ -z "${SUPABASE_FUNCTION_URL}" || -z "${WEBHOOK_SECRET}" ]]; then
             echo "Missing APOKOLIPS_BLOG_PUSH_FUNCTION_URL or APOKOLIPS_BLOG_WEBHOOK_SECRET repository secret."
             exit 1
           fi
           while IFS= read -r image_src; do
-            [[ -z "\${image_src}" ]] && continue
-            payload=$(jq -n --arg src "\${image_src}" '{event:"media_added",file_path:$src}')
+            [[ -z "${image_src}" ]] && continue
+            payload=$(jq -n --arg src "${image_src}" '{event:"media_added",file_path:$src}')
             curl --fail-with-body --silent --show-error \
-              -X POST "\${SUPABASE_FUNCTION_URL}" \
+              -X POST "${SUPABASE_FUNCTION_URL}" \
               -H "Content-Type: application/json" \
-              -H "x-blog-webhook-secret: \${WEBHOOK_SECRET}" \
-              --data "\${payload}"
-            echo "Queued new blog photo notification for \${image_src}"
+              -H "x-blog-webhook-secret: ${WEBHOOK_SECRET}" \
+              --data "${payload}"
+            echo "Queued new blog photo notification for ${image_src}"
           done < /tmp/new-blog-photos.txt
