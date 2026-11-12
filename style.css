@@ -112,18 +112,8 @@ kbd{font:9px DM Mono,monospace;color:#9eacc0;background:#ffffff0b;border:1px sol
 .quick-card.reveal-on-scroll{opacity:0;transform:perspective(900px) translateY(28px) scale(.985);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1),border-color .25s;transition-delay:var(--reveal-delay,0ms)}
 .quick-card.reveal-on-scroll.is-visible{opacity:1;transform:perspective(900px) rotateX(var(--tilt-y,0deg)) rotateY(var(--tilt-x,0deg)) translateY(0) scale(1)}
 .quick-card.reveal-on-scroll:hover{transform:perspective(900px) rotateX(var(--tilt-y,0deg)) rotateY(var(--tilt-x,0deg)) translateY(-6px) scale(1.005)}
-.focus-toggle[aria-pressed="true"]{border-color:rgba(112,169,255,.7);background:rgba(112,169,255,.13);box-shadow:0 0 22px rgba(112,169,255,.14)}
-.local-clock{display:grid;gap:3px;text-align:center;font-family:"DM Mono",monospace}
-.local-clock>span{font-size:8px;letter-spacing:1.4px;color:#8496b1}
-.local-clock strong{font-size:13px;letter-spacing:1px;color:#dceaff}
-.local-clock small{font-size:8px;color:#77849a}
-.focus-mode .topbar,.focus-mode .quick-grid,.focus-mode .footer{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .35s ease,visibility .35s}
-.focus-mode .hero-wrap{padding-top:16vh;transition:padding .35s ease}
-.focus-mode .hero-ambient{opacity:1}
-.focus-mode .inspiration-strip{box-shadow:0 0 45px rgba(64,126,220,.12)}
-.topbar,.quick-grid,.footer{transition:opacity .35s ease,visibility .35s}
-@media(max-width:700px){.hero-ambient{top:5rem;height:430px}.hero-ambient span:nth-child(1){width:300px;height:300px;left:calc(50% - 150px)}.hero-ambient span:nth-child(2){width:420px;height:210px;left:calc(50% - 210px)}.hero-ambient span:nth-child(3){width:500px;height:260px;left:calc(50% - 250px)}.inspiration-strip{gap:9px;margin-top:25px;padding:11px}.inspiration-strip p{font-size:10px}.inspiration-strip button{font-size:8px}.local-clock{min-width:100px}.focus-mode .hero-wrap{padding-top:12vh}}
-@media(prefers-reduced-motion:reduce){.hero-ambient span,.hero-wrap:before,.role-rotator,.inspiration-strip,.inspiration-mark{animation:none!important}.quick-card,.quick-card.reveal-on-scroll,.quick-card.reveal-on-scroll.is-visible,.quick-card.reveal-on-scroll:hover{transform:none!important;transition:none!important}.focus-mode .topbar,.focus-mode .quick-grid,.focus-mode .footer{transition:none}}
+@media(max-width:700px){.hero-ambient{top:5rem;height:430px}.hero-ambient span:nth-child(1){width:300px;height:300px;left:calc(50% - 150px)}.hero-ambient span:nth-child(2){width:420px;height:210px;left:calc(50% - 210px)}.hero-ambient span:nth-child(3){width:500px;height:260px;left:calc(50% - 250px)}.inspiration-strip{gap:9px;margin-top:25px;padding:11px}.inspiration-strip p{font-size:10px}.inspiration-strip button{font-size:8px}}
+@media(prefers-reduced-motion:reduce){.hero-ambient span,.hero-wrap:before,.role-rotator,.inspiration-strip,.inspiration-mark{animation:none!important}.quick-card,.quick-card.reveal-on-scroll,.quick-card.reveal-on-scroll.is-visible,.quick-card.reveal-on-scroll:hover{transform:none!important;transition:none!important}}
 
 
 /* Advanced motion pack: subtle, layered, performance-conscious */
