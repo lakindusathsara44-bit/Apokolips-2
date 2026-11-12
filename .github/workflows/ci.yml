@@ -43,6 +43,16 @@ jobs:
       - name: Build React homepage assets
         run: npm run build:home
 
+      - name: Build React + Vite blog assets
+        run: npm run build:blog
+
+      - name: Verify generated blog bundle
+        run: |
+          test -s blog.html
+          test -s assets/blog/blog.js
+          test -s assets/blog/blog.css
+          grep -q 'assets/blog/blog.js' blog.html
+
       - name: Check required files, HTML references, and sitemap
         run: python .github/scripts/verify_site.py
 
