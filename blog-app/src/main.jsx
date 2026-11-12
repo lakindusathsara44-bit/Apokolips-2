@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { blogVisitorId, supabase, SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase';
 import './styles.css';
@@ -93,6 +93,7 @@ function App() {
   const [lightbox, setLightbox] = useState(null);
   const [toast, setToast] = useState('');
   const [scrollProgress, setScrollProgress] = useState(0);
+  const searchInputRef = useRef(null);
 
   const visiblePosts = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -225,6 +226,17 @@ function App() {
       });
     return () => { cancelled = true; };
   }, [deviceName, lockName]);
+
+  useEffect(() => {
+    const onShortcut = (event) => {
+      if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
+        searchInputRef.current?.focus();
+      }
+    };
+    window.addEventListener('keydown', onShortcut);
+    return () => window.removeEventListener('keydown', onShortcut);
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
@@ -512,7 +524,7 @@ function App() {
             </div>
 
             <div className="blog2-tools blog-reveal">
-              <label className="blog2-search"><span>⌕</span><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search memories..." aria-label="Search memories" /><kbd>⌘ K</kbd></label>
+              <label className="blog2-search"><span>⌕</span><input ref={searchInputRef} value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Search memories..." aria-label="Search memories" /><kbd>⌘ K</kbd></label>
               <div className="blog2-tool-right">
                 <div className="blog2-filters" role="group" aria-label="Filter memories">
                   {['All', 'Photo', 'Video'].map((item) => <button type="button" key={item} className={filter === item ? 'active' : ''} onClick={() => setFilter(item)}>{item === 'All' ? 'All' : item + 's'}</button>)}
