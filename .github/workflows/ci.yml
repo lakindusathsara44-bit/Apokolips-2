@@ -48,7 +48,7 @@ jobs:
 
       - name: Verify React blog output
         run: |
-          test -s dist/blog/blog.html
+          test -s dist/blog/index.html
           test -s dist/blog/assets/blog/blog.js
           test -s dist/blog/assets/blog/blog.css
 
