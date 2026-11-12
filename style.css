@@ -192,8 +192,8 @@ kbd{font:9px DM Mono,monospace;color:#9eacc0;background:#ffffff0b;border:1px sol
 @media(prefers-reduced-motion:reduce){.mechanical-intro{display:none!important}}
 
 
-/* Four mechanical arms converge over a deliberate five-second intro */
-.intro-arm{position:absolute;z-index:4;left:50%;top:50%;width:49%;height:18px;transform-origin:left center;pointer-events:none;filter:drop-shadow(0 0 7px rgba(70,155,255,.55));animation:armConverge 5s cubic-bezier(.16,.82,.28,1) both}
+/* Four mechanical arms converge over a deliberate seven-second intro */
+.intro-arm{position:absolute;z-index:4;left:50%;top:50%;width:49%;height:18px;transform-origin:left center;pointer-events:none;filter:drop-shadow(0 0 7px rgba(70,155,255,.55));animation:armConverge 7s cubic-bezier(.16,.82,.28,1) both}
 .intro-arm-top{--arm-angle:-90deg;animation-delay:0s}
 .intro-arm-right{--arm-angle:0deg;animation-delay:.12s}
 .intro-arm-bottom{--arm-angle:90deg;animation-delay:.24s}
