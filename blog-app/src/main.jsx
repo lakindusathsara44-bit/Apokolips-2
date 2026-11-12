@@ -75,6 +75,7 @@ function decodeVapidKey(value) {
 function App() {
   const [showIntro, setShowIntro] = useState(true);
   const [introExiting, setIntroExiting] = useState(false);
+  const [introProgress, setIntroProgress] = useState(12);
   const [activity, setActivity] = useState({});
   const [deviceName, setDeviceName] = useState(() => localStorage.getItem(DEVICE_NAME_KEY) || '');
   const [nameDraft, setNameDraft] = useState('');
@@ -153,22 +154,33 @@ function App() {
 
   useEffect(() => {
     const startedAt = performance.now();
+    let finished = false;
     let hideTimer;
     let exitTimer;
     const finish = () => {
+      if (finished) return;
+      finished = true;
+      setIntroProgress(100);
       hideTimer = window.setTimeout(() => {
         setIntroExiting(true);
         exitTimer = window.setTimeout(() => setShowIntro(false), 520);
       }, Math.max(0, 7500 - (performance.now() - startedAt)));
     };
+    const updateReadyState = () => {
+      if (document.readyState === 'interactive') {
+        setIntroProgress((value) => Math.max(value, 58));
+      }
+      if (document.readyState === 'complete') finish();
+    };
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
       setShowIntro(false);
-    } else if (document.readyState === 'complete') {
-      finish();
     } else {
+      document.addEventListener('readystatechange', updateReadyState);
       window.addEventListener('load', finish, { once: true });
+      updateReadyState();
     }
     return () => {
+      document.removeEventListener('readystatechange', updateReadyState);
       window.removeEventListener('load', finish);
       window.clearTimeout(hideTimer);
       window.clearTimeout(exitTimer);
@@ -442,8 +454,8 @@ function App() {
           <div className="intro-scanline" />
         </div>
         <div className="intro-brand">APOKOLIPS</div><div className="intro-subtitle">BLOG SYSTEMS · ONLINE</div>
-        <div className="intro-progress"><span style={{ width: '100%' }} /></div>
-        <div className="intro-status"><span>SYSTEM READY</span><strong>100%</strong></div>
+        <div className="intro-progress"><span style={{ width: introProgress + '%' }} /></div>
+        <div className="intro-status"><span>{introProgress === 100 ? 'SYSTEM READY' : 'LOADING RESOURCES'}</span><strong>{introProgress}%</strong></div>
       </div>}
 
       <div className="blog-progress-track"><span style={{ width: scrollProgress + '%' }} /></div>
