@@ -46,7 +46,7 @@ function IntroAnimation() {
       hideTimer = window.setTimeout(() => {
         setExiting(true);
         hideTimer = window.setTimeout(() => setShow(false), 480);
-      }, Math.max(0, 350 - (performance.now() - startedAt)));
+      }, Math.max(0, 5000 - (performance.now() - startedAt)));
     };
     const updateReadyState = () => {
       if (document.readyState === 'interactive') setProgress(value => Math.max(value, 58));
@@ -72,6 +72,10 @@ function IntroAnimation() {
         <div className="intro-orbit intro-orbit-two" />
         <div className="intro-gear intro-gear-large"><span /><i /><i /><i /><i /><i /><i /><i /><i /></div>
         <div className="intro-gear intro-gear-small"><span /><i /><i /><i /><i /><i /></div>
+        <div className="intro-arm intro-arm-top"><i /><b /></div>
+        <div className="intro-arm intro-arm-right"><i /><b /></div>
+        <div className="intro-arm intro-arm-bottom"><i /><b /></div>
+        <div className="intro-arm intro-arm-left"><i /><b /></div>
         <div className="intro-core"><b>A</b><span /></div>
         <div className="intro-scanline" />
       </div>
