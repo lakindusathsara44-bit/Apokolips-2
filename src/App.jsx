@@ -4,18 +4,6 @@ const ICON = './file_00000000a7ec820890154ca6ed49b608.ico';
 const VISITOR_KEY = 'apokolips_xyz_homepage_visitors_2026';
 const VISITOR_API = 'https://countapi.mileshilliard.com/api/v1';
 
-// Show the mechanical intro on every second homepage visit/refresh.
-const SHOW_INTRO_THIS_LOAD = (() => {
-  try {
-    const previousVisits = Number(localStorage.getItem('apokolips_intro_visit_count') || 0);
-    const currentVisit = previousVisits + 1;
-    localStorage.setItem('apokolips_intro_visit_count', String(currentVisit));
-    return currentVisit % 2 === 0;
-  } catch (_) {
-    return true;
-  }
-})();
-
 const links = [
   ['Home', 'index.html'],
   ['About Me', 'info.html'],
@@ -41,63 +29,6 @@ const quotes = [
   'Keep learning. Keep creating. Keep moving forward.'
 ];
 
-
-function IntroAnimation() {
-  const [show, setShow] = useState(SHOW_INTRO_THIS_LOAD);
-  const [progress, setProgress] = useState(12);
-  const [exiting, setExiting] = useState(false);
-  useEffect(() => {
-    if (!SHOW_INTRO_THIS_LOAD || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShow(false); return undefined; }
-    let finished = false;
-    let hideTimer;
-    const startedAt = performance.now();
-    const completeLoading = () => {
-      if (finished) return;
-      finished = true;
-      setProgress(100);
-      hideTimer = window.setTimeout(() => {
-        setExiting(true);
-        hideTimer = window.setTimeout(() => setShow(false), 480);
-      }, Math.max(0, 7500 - (performance.now() - startedAt)));
-    };
-    const updateReadyState = () => {
-      if (document.readyState === 'interactive') setProgress(value => Math.max(value, 58));
-      if (document.readyState === 'complete') completeLoading();
-    };
-    document.addEventListener('readystatechange', updateReadyState);
-    window.addEventListener('load', completeLoading, { once: true });
-    updateReadyState();
-    return () => {
-      document.removeEventListener('readystatechange', updateReadyState);
-      window.removeEventListener('load', completeLoading);
-      window.clearTimeout(hideTimer);
-    };
-  }, []);
-  if (!show) return null;
-  return (
-    <div className={'mechanical-intro' + (exiting ? ' is-exiting' : '')} role="status" aria-label="Apokolips is loading">
-      <div className="intro-grid" />
-      <div className="intro-corner intro-corner-tl" />
-      <div className="intro-corner intro-corner-br" />
-      <div className="intro-machine">
-        <div className="intro-orbit intro-orbit-one" />
-        <div className="intro-orbit intro-orbit-two" />
-        <div className="intro-gear intro-gear-large"><span /><i /><i /><i /><i /><i /><i /><i /><i /></div>
-        <div className="intro-gear intro-gear-small"><span /><i /><i /><i /><i /><i /></div>
-        <div className="intro-arm intro-arm-top"><i /><b /></div>
-        <div className="intro-arm intro-arm-right"><i /><b /></div>
-        <div className="intro-arm intro-arm-bottom"><i /><b /></div>
-        <div className="intro-arm intro-arm-left"><i /><b /></div>
-        <div className="intro-core"><b>A</b><span /></div>
-        <div className="intro-scanline" />
-      </div>
-      <div className="intro-brand">APOKOLIPS</div>
-      <div className="intro-subtitle">MECHANICAL SYSTEMS · ONLINE</div>
-      <div className="intro-progress"><span style={{ width: progress + '%' }} /></div>
-      <div className="intro-status"><span>{progress === 100 ? 'SYSTEM READY' : 'LOADING RESOURCES'}</span><strong>{progress}%</strong></div>
-    </div>
-  );
-}
 
 function RainCanvas() {
   useEffect(() => {
@@ -308,7 +239,6 @@ export default function App() {
 
   return (
     <div className="app-shell">
-      <IntroAnimation />
       <div className="scroll-progress" style={{ transform: 'scaleX(' + progress / 100 + ')' }} aria-hidden="true" />
       <RainCanvas />
       <div className="hero-ambient" aria-hidden="true"><span /><span /><span /></div>
