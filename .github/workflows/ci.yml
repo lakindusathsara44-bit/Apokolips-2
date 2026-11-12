@@ -43,6 +43,15 @@ jobs:
       - name: Build React homepage assets
         run: npm run build:home
 
+      - name: Build React blog assets
+        run: npm run build:blog
+
+      - name: Verify React blog output
+        run: |
+          test -s dist/blog/index.html
+          test -s dist/blog/assets/blog/blog.js
+          test -s dist/blog/assets/blog/blog.css
+
       - name: Check required files, HTML references, and sitemap
         run: python .github/scripts/verify_site.py
 

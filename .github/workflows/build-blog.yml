@@ -1,0 +1,85 @@
+name: Build Apokolips Blog (React + Vite)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'blog-app/**'
+      - 'blog.html'
+      - 'style.css'
+      - 'vite.blog.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/build-blog.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'blog-app/**'
+      - 'blog.html'
+      - 'style.css'
+      - 'vite.blog.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/build-blog.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apokolips-blog-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source branch
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+          persist-credentials: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install pinned dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build React blog with Vite
+        run: npm run build:blog
+
+      - name: Publish generated static page and bundles
+        run: |
+          test -s dist/blog/index.html
+          test -s dist/blog/assets/blog/blog.js
+          test -s dist/blog/assets/blog/blog.css
+          cp dist/blog/index.html blog.html
+          mkdir -p assets/blog
+          cp dist/blog/assets/blog/* assets/blog/
+          python - <<'PY'
+          from pathlib import Path
+          page = Path("blog.html")
+          source = page.read_text(encoding="utf-8")
+          if 'href="./style.css"' not in source:
+              source = source.replace("</head>", '    <link rel="stylesheet" href="./style.css">\n  </head>')
+          page.write_text(source, encoding="utf-8")
+          PY
+          grep -q 'assets/blog/blog.js' blog.html
+          grep -q 'assets/blog/blog.css' blog.html
+          echo "React blog HTML and static bundles are ready."
+
+      - name: Commit generated blog output
+        run: |
+          git add -f blog.html assets/blog
+          if git diff --cached --quiet; then
+            echo "Generated blog output is already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Build React Vite Apokolips blog assets"
+          git push origin HEAD:${{ github.head_ref || github.ref_name }}

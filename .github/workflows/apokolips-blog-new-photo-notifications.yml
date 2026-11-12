@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'blog.html'
+      - 'blog-app/src/App.jsx'
 
 permissions:
   contents: read
@@ -31,19 +32,36 @@ jobs:
           fi
           git show "${BEFORE_SHA}:blog.html" > /tmp/old-blog.html 2>/dev/null || true
           git show "${AFTER_SHA}:blog.html" > /tmp/new-blog.html
+          git show "${BEFORE_SHA}:blog-app/src/App.jsx" > /tmp/old-blog-source.jsx 2>/dev/null || true
+          git show "${AFTER_SHA}:blog-app/src/App.jsx" > /tmp/new-blog-source.jsx 2>/dev/null || true
           node > /tmp/new-blog-photos.txt <<'NODE'
           const fs = require("fs");
           const imagePattern = /\.(?:jpe?g|png|webp|gif)(?:[?#].*)?$/i;
-          const extract = (html) => {
+          const photoNamePattern = /\/IMG-[^/]+\.(?:jpe?g|png|webp|gif)(?:[?#].*)?$/i;
+          const extract = (...sources) => {
             const found = new Set();
-            for (const match of html.matchAll(/<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi)) {
-              const src = match[1].trim();
-              if (imagePattern.test(src)) found.add(src);
+            for (const source of sources) {
+              const patterns = [
+                /<img\b[^>]*\bsrc\s*=\s*["']([^"']+)["']/gi,
+                /\bimage\s*:\s*["']([^"']+)["']/gi
+              ];
+              for (const pattern of patterns) {
+                for (const match of source.matchAll(pattern)) {
+                  const src = match[1].trim();
+                  if (imagePattern.test(src) && photoNamePattern.test(src)) found.add(src);
+                }
+              }
             }
             return found;
           };
-          const before = extract(fs.readFileSync("/tmp/old-blog.html", "utf8"));
-          const after = extract(fs.readFileSync("/tmp/new-blog.html", "utf8"));
+          const before = extract(
+            fs.readFileSync("/tmp/old-blog.html", "utf8"),
+            fs.readFileSync("/tmp/old-blog-source.jsx", "utf8")
+          );
+          const after = extract(
+            fs.readFileSync("/tmp/new-blog.html", "utf8"),
+            fs.readFileSync("/tmp/new-blog-source.jsx", "utf8")
+          );
           for (const src of after) if (!before.has(src)) console.log(src);
           NODE
           if [[ ! -s /tmp/new-blog-photos.txt ]]; then
