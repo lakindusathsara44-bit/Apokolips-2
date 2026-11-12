@@ -68,6 +68,10 @@ function IntroAnimation() {
       <div className="intro-corner intro-corner-tl" />
       <div className="intro-corner intro-corner-br" />
       <div className="intro-machine">
+        <div className="intro-arm intro-arm-top"><i /><b /></div>
+        <div className="intro-arm intro-arm-right"><i /><b /></div>
+        <div className="intro-arm intro-arm-bottom"><i /><b /></div>
+        <div className="intro-arm intro-arm-left"><i /><b /></div>
         <div className="intro-orbit intro-orbit-one" />
         <div className="intro-orbit intro-orbit-two" />
         <div className="intro-gear intro-gear-large"><span /><i /><i /><i /><i /><i /><i /><i /><i /></div>
