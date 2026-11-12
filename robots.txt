@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://apokolips.xyz/sitemap.xml
