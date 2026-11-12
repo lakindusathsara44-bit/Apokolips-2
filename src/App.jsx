@@ -122,11 +122,10 @@ function VisitorCounter() {
   return <span className="visitor-counter" aria-label="Apokolips visitor count"><span>VISITORS</span><strong>{count}</strong></span>;
 }
 
-function CommandPalette({ open, onClose, onFocus, onInspire }) {
+function CommandPalette({ open, onClose, onInspire }) {
   const [query, setQuery] = useState('');
   const actions = [
     ...links.map(([label, href]) => ({ label, href, detail: 'Open page' })),
-    { label: 'Toggle focus mode', action: onFocus, detail: 'Hide distractions · Ctrl + Shift + F' },
     { label: 'Inspire me', action: onInspire, detail: 'Show a fresh creative thought' },
     { label: 'Explore projects', action: () => document.getElementById('projects')?.scrollIntoView({ behavior: 'smooth' }), detail: 'Jump to project cards' }
   ];
@@ -165,7 +164,6 @@ function CommandPalette({ open, onClose, onFocus, onInspire }) {
 export default function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [paletteOpen, setPaletteOpen] = useState(false);
-  const [focusMode, setFocusMode] = useState(false);
   const [showTop, setShowTop] = useState(false);
   const [progress, setProgress] = useState(0);
   const [quoteIndex, setQuoteIndex] = useState(0);
@@ -179,11 +177,6 @@ export default function App() {
     setToast('A little inspiration for your next idea');
   };
 
-  const toggleFocus = () => {
-    setFocusMode(current => !current);
-    setToast(focusMode ? 'Focus mode off' : 'Focus mode on');
-  };
-
   useEffect(() => {
     const onScroll = () => {
       const max = document.documentElement.scrollHeight - window.innerHeight;
@@ -194,10 +187,6 @@ export default function App() {
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
         event.preventDefault();
         setPaletteOpen(value => !value);
-      }
-      if ((event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === 'f') {
-        event.preventDefault();
-        setFocusMode(value => !value);
       }
       if (event.key === 'Escape') setPaletteOpen(false);
     };
@@ -248,7 +237,7 @@ export default function App() {
   };
 
   return (
-    <div className={'app-shell' + (focusMode ? ' focus-mode' : '')}>
+    <div className="app-shell">
       <div className="scroll-progress" style={{ transform: 'scaleX(' + progress / 100 + ')' }} aria-hidden="true" />
       <RainCanvas />
       <div className="hero-ambient" aria-hidden="true"><span /><span /><span /></div>
@@ -271,7 +260,6 @@ export default function App() {
           <a className="btn btn-primary" href="My-project.html">Explore Projects <span>↗</span></a>
           <a className="btn btn-ghost" href="editor.html">Open Code Editor <span>↗</span></a>
           <a className="btn btn-ghost" href="project.gallery.html">Community Gallery <span>↗</span></a>
-          <button className="btn btn-ghost focus-toggle" type="button" aria-pressed={focusMode} onClick={toggleFocus}>{focusMode ? 'Exit Focus Mode' : 'Focus Mode'} <span>◉</span></button>
         </div>
         <div className="hero-meta"><span>BASED IN SRI LANKA</span><span className="meta-line" /><span className="role-rotator" key={roleIndex}>{roles[roleIndex]}</span></div>
         <section className="inspiration-strip" aria-live="polite">
@@ -303,7 +291,7 @@ export default function App() {
       </footer>
 
       <button className={'back-to-top' + (showTop ? ' visible' : '')} type="button" aria-label="Back to top" onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>↑</button>
-      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onFocus={toggleFocus} onInspire={inspire} />
+      <CommandPalette open={paletteOpen} onClose={() => setPaletteOpen(false)} onInspire={inspire} />
       <div className={'toast-message' + (toast ? ' visible' : '')} role="status" aria-live="polite">{toast}</div>
     </div>
   );
