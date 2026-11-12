@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 
-const ICON = '/file_00000000a7ec820890154ca6ed49b608.ico';
+const ICON = './file_00000000a7ec820890154ca6ed49b608.ico';
 const VISITOR_KEY = 'apokolips_xyz_homepage_visitors_2026';
 const VISITOR_API = 'https://countapi.mileshilliard.com/api/v1';
 
