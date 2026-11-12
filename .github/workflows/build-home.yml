@@ -1,0 +1,72 @@
+name: Build Apokolips Homepage (React + Vite)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'src/**'
+      - 'style.css'
+      - 'vite.home.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/build-home.yml'
+  pull_request:
+    branches: [main]
+    paths:
+      - 'index.html'
+      - 'src/**'
+      - 'style.css'
+      - 'vite.home.config.js'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/build-home.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: apokolips-home-build
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Build React homepage with Vite
+        run: npm run build:home
+
+      - name: Verify generated bundles
+        run: |
+          test -s assets/home/home.js
+          test -s assets/home/home.css
+          grep -q 'assets/home/home.js' index.html
+          echo "Verified React homepage bundles."
+
+      - name: Commit generated assets
+        if: github.event_name == 'push'
+        run: |
+          git add -f assets/home/home.js assets/home/home.css
+          if git diff --cached --quiet; then
+            echo "Homepage bundles are already up to date."
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Build React Vite homepage assets"
+          git push origin HEAD:main
