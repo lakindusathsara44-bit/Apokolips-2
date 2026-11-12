@@ -4,7 +4,7 @@ import { resolve } from 'node:path';
 
 export default defineConfig({
   root: process.cwd(),
-  base: '/',
+  base: './',
   plugins: [react()],
   build: {
     outDir: resolve(process.cwd(), 'assets/home'),
