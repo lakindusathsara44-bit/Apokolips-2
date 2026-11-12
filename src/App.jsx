@@ -4,6 +4,18 @@ const ICON = './file_00000000a7ec820890154ca6ed49b608.ico';
 const VISITOR_KEY = 'apokolips_xyz_homepage_visitors_2026';
 const VISITOR_API = 'https://countapi.mileshilliard.com/api/v1';
 
+// Show the mechanical intro on every second homepage visit/refresh.
+const SHOW_INTRO_THIS_LOAD = (() => {
+  try {
+    const previousVisits = Number(localStorage.getItem('apokolips_intro_visit_count') || 0);
+    const currentVisit = previousVisits + 1;
+    localStorage.setItem('apokolips_intro_visit_count', String(currentVisit));
+    return currentVisit % 2 === 0;
+  } catch (_) {
+    return true;
+  }
+})();
+
 const links = [
   ['Home', 'index.html'],
   ['About Me', 'info.html'],
@@ -31,11 +43,11 @@ const quotes = [
 
 
 function IntroAnimation() {
-  const [show, setShow] = useState(true);
+  const [show, setShow] = useState(SHOW_INTRO_THIS_LOAD);
   const [progress, setProgress] = useState(12);
   const [exiting, setExiting] = useState(false);
   useEffect(() => {
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShow(false); return undefined; }
+    if (!SHOW_INTRO_THIS_LOAD || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShow(false); return undefined; }
     let finished = false;
     let hideTimer;
     const startedAt = performance.now();
