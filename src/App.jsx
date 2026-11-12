@@ -307,7 +307,8 @@ export default function App() {
   };
 
   return (
-    <div className="app-shell">\n      <IntroAnimation />
+    <div className="app-shell">
+      <IntroAnimation />
       <div className="scroll-progress" style={{ transform: 'scaleX(' + progress / 100 + ')' }} aria-hidden="true" />
       <RainCanvas />
       <div className="hero-ambient" aria-hidden="true"><span /><span /><span /></div>
