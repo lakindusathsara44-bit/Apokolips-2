@@ -31,30 +31,39 @@ const quotes = [
 
 
 function IntroAnimation() {
-  const [show, setShow] = useState(false);
-  const [progress, setProgress] = useState(0);
+  const [show, setShow] = useState(true);
+  const [progress, setProgress] = useState(12);
+  const [exiting, setExiting] = useState(false);
   useEffect(() => {
-    let alreadySeen = false;
-    try { alreadySeen = sessionStorage.getItem('apokolips_intro_seen') === '1'; } catch (_) {}
-    if (alreadySeen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
-    setShow(true);
-    const started = performance.now();
-    let frame;
-    const tick = now => {
-      const value = Math.min(100, Math.round(((now - started) / 3100) * 100));
-      setProgress(value);
-      if (value < 100) frame = window.requestAnimationFrame(tick);
-      else {
-        try { sessionStorage.setItem('apokolips_intro_seen', '1'); } catch (_) {}
-        window.setTimeout(() => setShow(false), 520);
-      }
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) { setShow(false); return undefined; }
+    let finished = false;
+    let hideTimer;
+    const startedAt = performance.now();
+    const completeLoading = () => {
+      if (finished) return;
+      finished = true;
+      setProgress(100);
+      hideTimer = window.setTimeout(() => {
+        setExiting(true);
+        hideTimer = window.setTimeout(() => setShow(false), 480);
+      }, Math.max(0, 350 - (performance.now() - startedAt)));
     };
-    frame = window.requestAnimationFrame(tick);
-    return () => window.cancelAnimationFrame(frame);
+    const updateReadyState = () => {
+      if (document.readyState === 'interactive') setProgress(value => Math.max(value, 58));
+      if (document.readyState === 'complete') completeLoading();
+    };
+    document.addEventListener('readystatechange', updateReadyState);
+    window.addEventListener('load', completeLoading, { once: true });
+    updateReadyState();
+    return () => {
+      document.removeEventListener('readystatechange', updateReadyState);
+      window.removeEventListener('load', completeLoading);
+      window.clearTimeout(hideTimer);
+    };
   }, []);
   if (!show) return null;
   return (
-    <div className="mechanical-intro" role="status" aria-label="Apokolips is initializing">
+    <div className={'mechanical-intro' + (exiting ? ' is-exiting' : '')} role="status" aria-label="Apokolips is loading">
       <div className="intro-grid" />
       <div className="intro-corner intro-corner-tl" />
       <div className="intro-corner intro-corner-br" />
@@ -69,8 +78,7 @@ function IntroAnimation() {
       <div className="intro-brand">APOKOLIPS</div>
       <div className="intro-subtitle">MECHANICAL SYSTEMS · ONLINE</div>
       <div className="intro-progress"><span style={{ width: progress + '%' }} /></div>
-      <div className="intro-status"><span>INITIALIZING CORE</span><strong>{String(progress).padStart(2, '0')}%</strong></div>
-      <div className="intro-flash" />
+      <div className="intro-status"><span>{progress === 100 ? 'SYSTEM READY' : 'LOADING RESOURCES'}</span><strong>{progress}%</strong></div>
     </div>
   );
 }
