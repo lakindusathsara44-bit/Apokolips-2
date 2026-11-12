@@ -7,11 +7,11 @@ const appRoot = resolve(repoRoot, 'blog-app');
 
 export default defineConfig({
   root: appRoot,
-  base: '../',
+  base: './',
   build: {
     outDir: resolve(repoRoot, 'assets', 'blog'),
     emptyOutDir: true,
-    cssCodeSplit: false,
+    cssCodeSplit: true,
     sourcemap: false,
     rollupOptions: {
       input: [
