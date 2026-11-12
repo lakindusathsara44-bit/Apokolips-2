@@ -8,16 +8,14 @@ const appRoot = resolve(repoRoot, 'blog-app');
 export default defineConfig({
   root: appRoot,
   base: './',
+  publicDir: resolve(appRoot, 'public'),
   build: {
     outDir: resolve(repoRoot, 'assets', 'blog'),
     emptyOutDir: true,
     cssCodeSplit: true,
     sourcemap: false,
     rollupOptions: {
-      input: [
-        resolve(appRoot, 'src', 'main.js'),
-        resolve(appRoot, 'src', 'blog.css')
-      ],
+      input: resolve(appRoot, 'src', 'main.js'),
       external: ['react', 'react-dom/client', '@supabase/supabase-js'],
       output: {
         format: 'es',
