@@ -40,6 +40,9 @@ jobs:
       - name: Build Community static assets
         run: npm run build:community
 
+      - name: Build React homepage assets
+        run: npm run build:home
+
       - name: Check required files, HTML references, and sitemap
         run: python .github/scripts/verify_site.py
 
