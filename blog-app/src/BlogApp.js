@@ -91,7 +91,7 @@ function SocialCard({ post }) {
   };
   const loadComments = async () => {
     const { data, error } = await supabaseClient.from('apokolips_blog_comments')
-      .select('id,parent_comment_id,display_name,body,created_at')
+      .select('id,parent_comment_id,visitor_id,display_name,body,created_at')
       .eq('post_slug', post.slug).order('created_at', { ascending: true }).limit(200);
     if (error) throw error;
     const rows = data || [];
@@ -235,7 +235,7 @@ function NotificationCenter() {
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'apokolips_blog_notifications', filter: 'recipient_visitor_id=eq.' + visitorId }, load)
       .subscribe();
     (async () => {
-      if (Notification.permission !== 'granted' || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
+      if (!('Notification' in window) || Notification.permission !== 'granted' || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
       try {
         const registration = await navigator.serviceWorker.getRegistration(swUrl.pathname);
         const subscription = await registration?.pushManager?.getSubscription();
