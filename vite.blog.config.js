@@ -23,7 +23,7 @@ export default defineConfig({
       output: {
         entryFileNames: 'assets/blog/blog.js',
         chunkFileNames: 'assets/blog/chunk-[name].js',
-        assetFileNames: 'assets/blog/blog.[extname]'
+        assetFileNames: 'assets/blog/blog[extname]'
       }
     }
   }
