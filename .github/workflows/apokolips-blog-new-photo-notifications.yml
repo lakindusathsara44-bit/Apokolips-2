@@ -19,6 +19,7 @@ jobs:
           fetch-depth: 0
 
       - name: Detect newly published blog photos
+        id: detect
         env:
           BEFORE_SHA: ${{ github.event.before }}
           AFTER_SHA: ${{ github.sha }}
@@ -47,11 +48,14 @@ jobs:
           for (const src of after) if (!before.has(src)) console.log(src);
           NODE
           if [[ ! -s /tmp/new-blog-photos.txt ]]; then
+            echo "has_new_photos=false" >> "$GITHUB_OUTPUT"
             echo "No newly referenced blog photos found."
             exit 0
           fi
+          echo "has_new_photos=true" >> "$GITHUB_OUTPUT"
 
       - name: Notify previous blog commenters about each new photo
+        if: steps.detect.outputs.has_new_photos == 'true'
         env:
           SUPABASE_FUNCTION_URL: ${{ secrets.APOKOLIPS_BLOG_PUSH_FUNCTION_URL }}
           WEBHOOK_SECRET: ${{ secrets.APOKOLIPS_BLOG_WEBHOOK_SECRET }}
