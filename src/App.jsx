@@ -29,6 +29,52 @@ const quotes = [
   'Keep learning. Keep creating. Keep moving forward.'
 ];
 
+
+function IntroAnimation() {
+  const [show, setShow] = useState(false);
+  const [progress, setProgress] = useState(0);
+  useEffect(() => {
+    let alreadySeen = false;
+    try { alreadySeen = sessionStorage.getItem('apokolips_intro_seen') === '1'; } catch (_) {}
+    if (alreadySeen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    setShow(true);
+    const started = performance.now();
+    let frame;
+    const tick = now => {
+      const value = Math.min(100, Math.round(((now - started) / 3100) * 100));
+      setProgress(value);
+      if (value < 100) frame = window.requestAnimationFrame(tick);
+      else {
+        try { sessionStorage.setItem('apokolips_intro_seen', '1'); } catch (_) {}
+        window.setTimeout(() => setShow(false), 520);
+      }
+    };
+    frame = window.requestAnimationFrame(tick);
+    return () => window.cancelAnimationFrame(frame);
+  }, []);
+  if (!show) return null;
+  return (
+    <div className="mechanical-intro" role="status" aria-label="Apokolips is initializing">
+      <div className="intro-grid" />
+      <div className="intro-corner intro-corner-tl" />
+      <div className="intro-corner intro-corner-br" />
+      <div className="intro-machine">
+        <div className="intro-orbit intro-orbit-one" />
+        <div className="intro-orbit intro-orbit-two" />
+        <div className="intro-gear intro-gear-large"><span /><i /><i /><i /><i /><i /><i /><i /><i /></div>
+        <div className="intro-gear intro-gear-small"><span /><i /><i /><i /><i /><i /></div>
+        <div className="intro-core"><b>A</b><span /></div>
+        <div className="intro-scanline" />
+      </div>
+      <div className="intro-brand">APOKOLIPS</div>
+      <div className="intro-subtitle">MECHANICAL SYSTEMS · ONLINE</div>
+      <div className="intro-progress"><span style={{ width: progress + '%' }} /></div>
+      <div className="intro-status"><span>INITIALIZING CORE</span><strong>{String(progress).padStart(2, '0')}%</strong></div>
+      <div className="intro-flash" />
+    </div>
+  );
+}
+
 function RainCanvas() {
   useEffect(() => {
     const canvas = document.getElementById('rain');
@@ -237,7 +283,7 @@ export default function App() {
   };
 
   return (
-    <div className="app-shell">
+    <div className="app-shell">\n      <IntroAnimation />
       <div className="scroll-progress" style={{ transform: 'scaleX(' + progress / 100 + ')' }} aria-hidden="true" />
       <RainCanvas />
       <div className="hero-ambient" aria-hidden="true"><span /><span /><span /></div>
