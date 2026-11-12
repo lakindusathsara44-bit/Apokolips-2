@@ -16,8 +16,10 @@ const SUPABASE_URL = "https://oqyfvvwplvbmmursbpkd.supabase.co";
   ];
   const visitorStorageKey = "apokolips-blog-visitor-v1";
   const deviceNameStorageKey = "apokolips-blog-device-name-v1";
-  let deviceDisplayName = localStorage.getItem(deviceNameStorageKey) || "";
-  let visitorId = localStorage.getItem(visitorStorageKey);
+  const safeStorageGet = key => { try { return window.localStorage.getItem(key); } catch (_) { return null; } };
+  const safeStorageSet = (key, value) => { try { window.localStorage.setItem(key, value); } catch (_) {} };
+  let deviceDisplayName = safeStorageGet(deviceNameStorageKey) || "";
+  let visitorId = safeStorageGet(visitorStorageKey);
   if (!visitorId) {
     visitorId = (window.crypto && crypto.randomUUID)
       ? crypto.randomUUID()
@@ -25,7 +27,7 @@ const SUPABASE_URL = "https://oqyfvvwplvbmmursbpkd.supabase.co";
           const r = Math.random() * 16 | 0;
           return (c === "x" ? r : (r & 3 | 8)).toString(16);
         });
-    localStorage.setItem(visitorStorageKey, visitorId);
+    safeStorageSet(visitorStorageKey, visitorId);
   }
 
   const supabaseClient = createClient(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
@@ -392,7 +394,7 @@ const SUPABASE_URL = "https://oqyfvvwplvbmmursbpkd.supabase.co";
     if (!name || deviceDisplayName) return;
     deviceDisplayName = name.trim().slice(0, 40);
     if (!deviceDisplayName) return;
-    localStorage.setItem(deviceNameStorageKey, deviceDisplayName);
+    safeStorageSet(deviceNameStorageKey, deviceDisplayName);
     cards.forEach(cardState => {
       cardState.name.value = deviceDisplayName;
       cardState.name.readOnly = true;
