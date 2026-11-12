@@ -205,3 +205,5 @@ kbd{font:9px DM Mono,monospace;color:#9eacc0;background:#ffffff0b;border:1px sol
 @keyframes armConverge{0%{opacity:0;transform:rotate(var(--arm-angle)) translateX(-168%) scale(.72)}55%{opacity:1}78%{transform:rotate(var(--arm-angle)) translateX(-94%) scale(1.04)}100%{opacity:1;transform:rotate(var(--arm-angle)) translateX(-100%) scale(1)}}
 .intro-core{z-index:5}
 @media(prefers-reduced-motion:reduce){.intro-arm{animation:none;opacity:1;transform:rotate(var(--arm-angle)) translateX(-100%)}}
+
+.intro-core img{display:block;width:72%;height:72%;object-fit:contain;border-radius:50%;filter:drop-shadow(0 0 8px rgba(91,168,255,.55))}
