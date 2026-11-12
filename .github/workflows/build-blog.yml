@@ -65,7 +65,7 @@ jobs:
           page = Path("blog.html")
           source = page.read_text(encoding="utf-8")
           if 'href="./style.css"' not in source:
-              source = source.replace("</head>", '    <link rel="stylesheet" href="./style.css">\\n  </head>')
+              source = source.replace("</head>", '    <link rel="stylesheet" href="./style.css">\n  </head>')
           page.write_text(source, encoding="utf-8")
           PY
           grep -q 'assets/blog/blog.js' blog.html
