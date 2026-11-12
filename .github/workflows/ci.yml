@@ -56,3 +56,4 @@ jobs:
           node --check blog-app/src/main.js
           node --check blog-app/src/BlogApp.js
           node --check blog-app/src/supabase.js
+          node --check assets/blog/blog.js
