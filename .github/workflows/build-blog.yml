@@ -54,10 +54,10 @@ jobs:
 
       - name: Publish generated static page and bundles
         run: |
-          test -s dist/blog/blog.html
+          test -s dist/blog/index.html
           test -s dist/blog/assets/blog/blog.js
           test -s dist/blog/assets/blog/blog.css
-          cp dist/blog/blog.html blog.html
+          cp dist/blog/index.html blog.html
           mkdir -p assets/blog
           cp dist/blog/assets/blog/* assets/blog/
           python - <<'PY'
