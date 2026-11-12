@@ -2,14 +2,14 @@
   "name": "Apokolips",
   "short_name": "Apokolips",
   "description": "The personal portfolio and project portal of Lakindu Sathsara.",
-  "start_url": "/",
-  "scope": "/",
+  "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#050609",
   "theme_color": "#050609",
   "icons": [
     {
-      "src": "/file_00000000a7ec820890154ca6ed49b608.ico?v=20261112",
+      "src": "./file_00000000a7ec820890154ca6ed49b608.ico?v=20261112",
       "sizes": "32x32",
       "type": "image/x-icon",
       "purpose": "any"
