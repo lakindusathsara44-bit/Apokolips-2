@@ -58,7 +58,7 @@ function IntroAnimation() {
       hideTimer = window.setTimeout(() => {
         setExiting(true);
         hideTimer = window.setTimeout(() => setShow(false), 480);
-      }, Math.max(0, 7000 - (performance.now() - startedAt)));
+      }, Math.max(0, 7500 - (performance.now() - startedAt)));
     };
     const updateReadyState = () => {
       if (document.readyState === 'interactive') setProgress(value => Math.max(value, 58));
