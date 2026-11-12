@@ -16,3 +16,36 @@
 .footer .visitor-counter{display:inline-flex;align-items:center;gap:9px;color:#737c8b;font:10px 'DM Mono',monospace;letter-spacing:.7px;white-space:nowrap}
 .footer .visitor-counter strong{display:inline-flex;align-items:center;justify-content:center;min-width:34px;min-height:22px;padding:2px 8px;border:1px solid rgba(112,169,255,.28);border-radius:5px;background:rgba(112,169,255,.07);color:#c7dcff;font-weight:700;letter-spacing:1px}
 @media(max-width:700px){.footer .visitor-counter{margin-left:auto}}
+
+
+/* React + Vite homepage motion layer */
+.hero-wrap{isolation:isolate}
+.hero-wrap:before{content:"";position:absolute;z-index:-1;width:min(58vw,620px);height:min(58vw,620px);right:-8%;top:8%;border-radius:50%;background:radial-gradient(circle,rgba(55,125,230,.14),rgba(55,125,230,.045) 42%,transparent 70%);filter:blur(8px);pointer-events:none;animation:heroAura 9s ease-in-out infinite alternate}
+.eyebrow{animation:fadeSlideUp .7s .08s both}
+.hero-wrap h1{animation:fadeSlideUp .85s .18s both}
+.hero-copy{animation:fadeSlideUp .8s .32s both}
+.hero-actions{animation:fadeSlideUp .8s .44s both}
+.hero-meta{animation:fadeSlideUp .8s .56s both}
+.brand{transition:transform .3s ease,filter .3s ease}
+.brand:hover{transform:translateY(-2px);filter:drop-shadow(0 0 12px rgba(112,169,255,.3))}
+.brand-mark{transition:box-shadow .3s ease,border-color .3s ease}
+.brand:hover .brand-mark{border-color:var(--blue);box-shadow:0 0 20px rgba(112,169,255,.22)}
+.quick-card{opacity:0;animation:cardReveal .7s ease forwards}
+.quick-card:nth-child(1){animation-delay:.12s}
+.quick-card:nth-child(2){animation-delay:.24s}
+.quick-card:nth-child(3){animation-delay:.36s}
+.quick-card:nth-child(4){animation-delay:.48s}
+.quick-card:before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;background:linear-gradient(115deg,transparent 15%,rgba(130,185,255,.08) 48%,transparent 78%);transform:translateX(-35%);transition:opacity .35s ease,transform .65s ease}
+.quick-card{position:relative;overflow:hidden}
+.quick-card:hover:before{opacity:1;transform:translateX(35%)}
+.card-icon{transition:transform .35s ease,text-shadow .35s ease}
+.quick-card:hover .card-icon{transform:translateY(-4px) scale(1.08);text-shadow:0 0 18px rgba(112,169,255,.45)}
+.btn{position:relative;overflow:hidden}
+.btn:after{content:"";position:absolute;top:-80%;left:-45%;width:35%;height:260%;transform:rotate(25deg);background:rgba(255,255,255,.2);transition:left .55s ease}
+.btn:hover:after{left:125%}
+.status-dot{animation:statusPulse 2.2s ease-in-out infinite}
+@keyframes fadeSlideUp{from{opacity:0;transform:translateY(22px)}to{opacity:1;transform:translateY(0)}}
+@keyframes cardReveal{from{opacity:0;transform:translateY(24px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
+@keyframes heroAura{from{transform:translate3d(0,-12px,0) scale(.92);opacity:.55}to{transform:translate3d(-24px,18px,0) scale(1.08);opacity:1}}
+@keyframes statusPulse{0%,100%{box-shadow:0 0 5px rgba(130,217,173,.45)}50%{box-shadow:0 0 15px rgba(130,217,173,.9)}}
+@media(prefers-reduced-motion:reduce){.eyebrow,.hero-wrap h1,.hero-copy,.hero-actions,.hero-meta,.quick-card{animation:none!important;opacity:1!important;transform:none!important}.hero-wrap:before,.status-dot{animation:none!important}.quick-card:before,.btn:after{display:none!important}}
