@@ -237,7 +237,7 @@ function NotificationCenter() {
     (async () => {
       if (!('Notification' in window) || Notification.permission !== 'granted' || !('serviceWorker' in navigator) || !('PushManager' in window)) return;
       try {
-        const registration = await navigator.serviceWorker.getRegistration(swUrl.pathname);
+        const registration = await navigator.serviceWorker.ready;
         const subscription = await registration?.pushManager?.getSubscription();
         if (!subscription) return;
         const { data } = await supabaseClient.from('apokolips_blog_push_subscriptions')
