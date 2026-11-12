@@ -82,3 +82,45 @@ kbd{font:9px DM Mono,monospace;color:#9eacc0;background:#ffffff0b;border:1px sol
 @keyframes palettePop{from{opacity:0;transform:translateY(12px) scale(.985)}to{opacity:1;transform:translateY(0) scale(1)}}
 @media(max-width:700px){.topbar-actions{gap:8px}.launch-button{padding:8px 9px;font-size:9px}.launch-button kbd{display:none}.back-to-top{right:16px;bottom:16px}.command-backdrop{padding-top:10vh}.footer{flex-wrap:wrap}}
 @media(prefers-reduced-motion:reduce){.scroll-progress{display:none}.quick-card.reveal-on-scroll,.quick-card.reveal-on-scroll.is-visible{opacity:1;transform:none;transition:none}.command-backdrop,.command-panel{animation:none}.back-to-top,.launch-button,.toast-message{transition:none}}
+
+/* Extended Apokolips motion and interaction layer */
+.app-shell{position:relative;min-height:100vh;isolation:isolate}
+.hero-ambient{position:absolute;z-index:2;top:7rem;left:50%;width:min(78vw,900px);height:540px;transform:translateX(-50%);pointer-events:none;overflow:hidden;opacity:.8}
+.hero-ambient span{position:absolute;display:block;border:1px solid rgba(112,169,255,.12);border-radius:50%;filter:blur(.2px);animation:ambientOrbit 24s linear infinite}
+.hero-ambient span:nth-child(1){width:420px;height:420px;top:30px;left:calc(50% - 210px);box-shadow:inset 0 0 75px rgba(64,126,220,.07),0 0 90px rgba(64,126,220,.08)}
+.hero-ambient span:nth-child(2){width:600px;height:260px;top:115px;left:calc(50% - 300px);transform:rotate(-24deg);animation-duration:32s;animation-direction:reverse}
+.hero-ambient span:nth-child(3){width:720px;height:330px;top:90px;left:calc(50% - 360px);transform:rotate(26deg);animation-duration:40s}
+@keyframes ambientOrbit{from{rotate:0deg}to{rotate:360deg}}
+.hero-wrap{position:relative}
+.hero-wrap:before{content:"";position:absolute;z-index:-1;top:-90px;left:50%;width:min(680px,90vw);height:420px;transform:translateX(-50%);background:radial-gradient(ellipse,rgba(53,112,210,.16),rgba(53,112,210,.035) 48%,transparent 72%);filter:blur(20px);animation:heroBreath 7s ease-in-out infinite alternate}
+@keyframes heroBreath{from{opacity:.45;scale:.94}to{opacity:1;scale:1.08}}
+.role-rotator{display:inline-block;min-width:100px;color:#9fc6ff;text-shadow:0 0 14px rgba(112,169,255,.4);animation:roleSwap .45s ease both}
+@keyframes roleSwap{from{opacity:0;transform:translateY(7px);filter:blur(4px)}to{opacity:1;transform:translateY(0);filter:blur(0)}}
+.inspiration-strip{display:flex;align-items:center;gap:14px;width:min(700px,100%);margin:34px auto 0;padding:13px 16px;border:1px solid rgba(112,169,255,.2);border-radius:10px;background:linear-gradient(110deg,rgba(112,169,255,.08),rgba(255,255,255,.018),rgba(112,169,255,.06));background-size:200% 100%;animation:inspirationShimmer 9s linear infinite;box-shadow:0 12px 38px rgba(0,0,0,.18)}
+@keyframes inspirationShimmer{0%{background-position:0% 50%}100%{background-position:200% 50%}}
+.inspiration-mark{color:#9cc8ff;font-size:18px;animation:markTwinkle 2.4s ease-in-out infinite}
+@keyframes markTwinkle{0%,100%{opacity:.55;transform:scale(.9) rotate(-10deg)}50%{opacity:1;transform:scale(1.15) rotate(12deg)}}
+.inspiration-strip p{flex:1;margin:0;color:#b8c6d9;font-size:11px;line-height:1.7;text-align:left}
+.inspiration-strip button{border:0;background:transparent;color:#91bfff;font:9px "DM Mono",monospace;letter-spacing:1px;white-space:nowrap;cursor:pointer;transition:color .2s,transform .2s}
+.inspiration-strip button:hover{color:#fff;transform:translateY(-2px)}
+.inspiration-strip button span{font-size:15px;margin-left:5px}
+.quick-card{transform-style:preserve-3d;will-change:transform;transition:transform .25s ease,opacity .7s ease,border-color .25s}
+.quick-card .card-icon{transform:translateZ(22px);transition:transform .3s ease,text-shadow .3s}
+.quick-card:hover .card-icon{transform:translateZ(30px) scale(1.12);text-shadow:0 0 24px rgba(112,169,255,.6)}
+.quick-card:after{content:"";position:absolute;inset:-1px;border-radius:inherit;background:radial-gradient(260px circle at var(--pointer-x,50%) var(--pointer-y,50%),rgba(112,169,255,.16),transparent 70%);opacity:0;transition:opacity .3s;pointer-events:none}
+.quick-card:hover:after{opacity:1}
+.quick-card.reveal-on-scroll{opacity:0;transform:perspective(900px) translateY(28px) scale(.985);transition:opacity .7s ease,transform .7s cubic-bezier(.2,.7,.2,1),border-color .25s;transition-delay:var(--reveal-delay,0ms)}
+.quick-card.reveal-on-scroll.is-visible{opacity:1;transform:perspective(900px) rotateX(var(--tilt-y,0deg)) rotateY(var(--tilt-x,0deg)) translateY(0) scale(1)}
+.quick-card.reveal-on-scroll:hover{transform:perspective(900px) rotateX(var(--tilt-y,0deg)) rotateY(var(--tilt-x,0deg)) translateY(-6px) scale(1.005)}
+.focus-toggle[aria-pressed="true"]{border-color:rgba(112,169,255,.7);background:rgba(112,169,255,.13);box-shadow:0 0 22px rgba(112,169,255,.14)}
+.local-clock{display:grid;gap:3px;text-align:center;font-family:"DM Mono",monospace}
+.local-clock>span{font-size:8px;letter-spacing:1.4px;color:#8496b1}
+.local-clock strong{font-size:13px;letter-spacing:1px;color:#dceaff}
+.local-clock small{font-size:8px;color:#77849a}
+.focus-mode .topbar,.focus-mode .quick-grid,.focus-mode .footer{opacity:0;visibility:hidden;pointer-events:none;transition:opacity .35s ease,visibility .35s}
+.focus-mode .hero-wrap{padding-top:16vh;transition:padding .35s ease}
+.focus-mode .hero-ambient{opacity:1}
+.focus-mode .inspiration-strip{box-shadow:0 0 45px rgba(64,126,220,.12)}
+.topbar,.quick-grid,.footer{transition:opacity .35s ease,visibility .35s}
+@media(max-width:700px){.hero-ambient{top:5rem;height:430px}.hero-ambient span:nth-child(1){width:300px;height:300px;left:calc(50% - 150px)}.hero-ambient span:nth-child(2){width:420px;height:210px;left:calc(50% - 210px)}.hero-ambient span:nth-child(3){width:500px;height:260px;left:calc(50% - 250px)}.inspiration-strip{gap:9px;margin-top:25px;padding:11px}.inspiration-strip p{font-size:10px}.inspiration-strip button{font-size:8px}.local-clock{min-width:100px}.focus-mode .hero-wrap{padding-top:12vh}}
+@media(prefers-reduced-motion:reduce){.hero-ambient span,.hero-wrap:before,.role-rotator,.inspiration-strip,.inspiration-mark{animation:none!important}.quick-card,.quick-card.reveal-on-scroll,.quick-card.reveal-on-scroll.is-visible,.quick-card.reveal-on-scroll:hover{transform:none!important;transition:none!important}.focus-mode .topbar,.focus-mode .quick-grid,.focus-mode .footer{transition:none}}
