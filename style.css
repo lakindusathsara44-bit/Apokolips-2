@@ -190,3 +190,18 @@ kbd{font:9px DM Mono,monospace;color:#9eacc0;background:#ffffff0b;border:1px sol
 @keyframes introGearSpin{to{transform:rotate(360deg)}}@keyframes introGearReverse{to{transform:rotate(-360deg)}}@keyframes introOrbitSpin{to{transform:rotateX(64deg) rotateZ(360deg)}}@keyframes introOrbitReverse{to{transform:rotateY(64deg) rotateZ(-360deg)}}@keyframes introCorePulse{0%,100%{transform:scale(.88);opacity:.35}50%{transform:scale(1.18);opacity:1}}@keyframes introScan{0%,100%{transform:translateY(-70px);opacity:0}35%,70%{opacity:.8}50%{transform:translateY(70px)}}@keyframes introMachineEnter{from{opacity:0;transform:scale(.65) rotate(-24deg)}to{opacity:1;transform:scale(1) rotate(0)}}@keyframes introTextIn{from{opacity:0;transform:translateY(12px);letter-spacing:.7em}to{opacity:1;transform:translateY(0)}}
 @media(max-width:520px){.intro-corner-tl{top:16px;left:16px}.intro-corner-br{right:16px;bottom:16px}.intro-machine{margin-bottom:22px}.intro-brand{letter-spacing:.3em;padding-left:.3em}}
 @media(prefers-reduced-motion:reduce){.mechanical-intro{display:none!important}}
+
+
+/* Four mechanical arms converge over a deliberate five-second intro */
+.intro-arm{position:absolute;z-index:4;left:50%;top:50%;width:49%;height:18px;transform-origin:left center;pointer-events:none;filter:drop-shadow(0 0 7px rgba(70,155,255,.55));animation:armConverge 5s cubic-bezier(.16,.82,.28,1) both}
+.intro-arm-top{--arm-angle:-90deg;animation-delay:0s}
+.intro-arm-right{--arm-angle:0deg;animation-delay:.12s}
+.intro-arm-bottom{--arm-angle:90deg;animation-delay:.24s}
+.intro-arm-left{--arm-angle:180deg;animation-delay:.36s}
+.intro-arm:before{content:"";position:absolute;left:0;top:5px;width:100%;height:8px;border:1px solid #6eb8ff;border-radius:3px;background:linear-gradient(180deg,#a5d9ff,#2868ad 42%,#0a1c35 75%);box-shadow:0 0 10px rgba(70,157,255,.55),inset 0 1px 2px rgba(255,255,255,.55)}
+.intro-arm:after{content:"";position:absolute;left:47%;top:1px;width:22px;height:16px;border:2px solid #8bcaff;border-radius:4px;background:linear-gradient(135deg,#194d84,#07172b);box-shadow:0 0 9px #398ce0}
+.intro-arm i{position:absolute;z-index:1;left:10%;top:0;width:13px;height:18px;border:2px solid #a4d7ff;border-radius:3px;background:linear-gradient(90deg,#17395f,#6ba9e9,#102847)}
+.intro-arm b{position:absolute;right:-2px;top:1px;width:18px;height:16px;border:2px solid #a7d8ff;border-left:0;border-radius:0 8px 8px 0;background:linear-gradient(90deg,#2866a5,#0a1d35);box-shadow:0 0 10px rgba(94,174,255,.65)}
+@keyframes armConverge{0%{opacity:0;transform:rotate(var(--arm-angle)) translateX(-168%) scale(.72)}55%{opacity:1}78%{transform:rotate(var(--arm-angle)) translateX(-94%) scale(1.04)}100%{opacity:1;transform:rotate(var(--arm-angle)) translateX(-100%) scale(1)}}
+.intro-core{z-index:5}
+@media(prefers-reduced-motion:reduce){.intro-arm{animation:none;opacity:1;transform:rotate(var(--arm-angle)) translateX(-100%)}}
