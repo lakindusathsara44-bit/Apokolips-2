@@ -122,17 +122,6 @@ function VisitorCounter() {
   return <span className="visitor-counter" aria-label="Apokolips visitor count"><span>VISITORS</span><strong>{count}</strong></span>;
 }
 
-function LocalClock() {
-  const [now, setNow] = useState(() => new Date());
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(new Date()), 30000);
-    return () => window.clearInterval(id);
-  }, []);
-  const time = new Intl.DateTimeFormat('en-LK', { timeZone: 'Asia/Colombo', hour: '2-digit', minute: '2-digit', hour12: true }).format(now);
-  const date = new Intl.DateTimeFormat('en-LK', { timeZone: 'Asia/Colombo', day: '2-digit', month: 'short', year: 'numeric' }).format(now);
-  return <span className="local-clock"><span>SRI LANKA</span><strong>{time}</strong><small>{date}</small></span>;
-}
-
 function CommandPalette({ open, onClose, onFocus, onInspire }) {
   const [query, setQuery] = useState('');
   const actions = [
@@ -310,7 +299,6 @@ export default function App() {
       <footer className="footer">
         <span>© {year} Lakindu Sathsara</span>
         <span>BUILT WITH CURIOSITY <span className="accent">●</span></span>
-        <LocalClock />
         <VisitorCounter />
       </footer>
 
