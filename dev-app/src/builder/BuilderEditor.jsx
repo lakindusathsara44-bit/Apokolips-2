@@ -177,7 +177,7 @@ export default function BuilderEditor({website,user,onBack}) {
   return <div className="builder-editor">
     <header className="builder-topbar">
       <button className="builder-back" onClick={onBack}>← Dashboard</button>
-      <div className="builder-project-name"><b>{website.name}</b><span>{website.slug}.sales.apokolips.xyz</span></div>
+      <div className="builder-project-name"><b>{website.name}</b><span>www.sales.apokolips.xyz/{website.slug}</span></div>
       <div className="builder-top-actions"><span className={dirty?'save-status pending':'save-status'}>{saving?'Saving…':dirty?'Unsaved':'Saved'}</span><button onClick={()=>void save()} disabled={!dirty||saving}>Save</button><button onClick={()=>void togglePublish()} disabled={publishing||dirty||saving}>{publishing?'Please wait…':publishStatus==='published'?'Unpublish':'Publish'}</button><button onClick={exportJson}>Export layout</button></div>
     </header>
     <div className="builder-toolbar">
