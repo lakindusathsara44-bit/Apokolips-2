@@ -45,7 +45,7 @@ function App() {
       const parts = window.location.pathname.split('/').filter(Boolean);
       const siteSlug = safeSegment(parts[0] || '');
       const pageSlug = safeSegment(parts[1] || 'home') || 'home';
-      if (!siteSlug) { if (alive) setState({ loading:false, website:null, page:null, blocks:[], error:'This Apokolips website address is not valid.' }); return; }
+      if (!siteSlug) { if (alive) setState({ loading:false, website:null, page:null, blocks:[], error:'This page is not available.' }); return; }
       const { data: site, error: siteError } = await supabase.from('builder_websites')
         .select('id,name,slug,status').eq('slug', siteSlug).eq('hosting_namespace','sales').eq('status','published').maybeSingle();
       if (siteError || !site) { if (alive) setState({ loading:false, website:null, page:null, blocks:[], error:'This website is unavailable or has not been published.' }); return; }
