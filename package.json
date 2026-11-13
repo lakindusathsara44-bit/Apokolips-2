@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --config vite.index.config.js",
-    "build": "vite build --config vite.index.config.js && vite build && vite build --config vite.dev.config.js",
+    "build": "vite build --config vite.index.config.js && vite build && vite build --config vite.dev.config.js && vite build --config vite.sales.config.js",
     "build:plans": "vite build",
     "preview": "vite preview --config vite.index.config.js",
     "build:dev": "vite build --config vite.dev.config.js"
