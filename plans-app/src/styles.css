@@ -189,3 +189,13 @@ body { margin: 0; background: #f5f7fa; }
 [data-theme="dark"] .plans-footer a { color: #9bc5eb; }
 [data-theme="dark"] .theme-toggle { background: #111111; border-color: #3a4e62; color: #e1eaf3; }
 [data-theme="dark"] .theme-toggle:hover { background: #202020; border-color: #6686a6; }
+
+.back-home{color:#315d85;text-decoration:none;font-size:10px;font-weight:750;letter-spacing:1px}
+.back-home:hover{text-decoration:underline}.plans-kicker .service-label{margin-left:14px;color:#536b85;font-size:10px;font-weight:700;letter-spacing:1.25px}
+.pricing-heading h1{margin:7px 0 0;color:#173451;font-size:clamp(30px,4vw,42px);letter-spacing:-1px}
+.pricing-heading h1 span{color:#326b9e}
+[data-theme="dark"] .back-home{color:#9bc5eb}
+[data-theme="dark"] .plans-kicker .service-label{color:#9bb2c9}
+[data-theme="dark"] .pricing-heading h1{color:#e5edf5}
+[data-theme="dark"] .pricing-heading h1 span{color:#8ab7e2}
+@media(max-width:680px){.plans-kicker .service-label{display:none}}
