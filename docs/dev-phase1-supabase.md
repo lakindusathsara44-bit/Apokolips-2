@@ -63,3 +63,13 @@ Not yet implemented: drag-and-drop editor, advanced source editor, custom domain
 ## Security notes
 
 The Supabase Security Advisor currently reports two pre-existing tables outside the Builder scope with RLS enabled but no policies (`apokolips_blog_media_events` and `apokolips_payments`) and a project-wide warning that leaked-password protection is disabled. The Builder tables themselves have RLS policies. Review and resolve those existing project findings separately.
+
+## Verification performed
+
+- Applied all three migrations to the existing Apokolips Supabase project.
+- Confirmed all seven Builder tables have RLS enabled and 19 table policies exist.
+- Confirmed four private Storage policies are installed for the non-public `builder-assets` bucket.
+- Backfilled the three existing Auth accounts with profiles, workspaces and owner memberships.
+- Ran an authenticated-role RLS smoke test: the test user saw one own workspace and zero other users' profiles.
+- Inserted a temporary website draft inside a rolled-back test transaction and confirmed its Home page was automatically created.
+- GitHub Actions React + Vite build and bundle verification passed for the latest PR head.
