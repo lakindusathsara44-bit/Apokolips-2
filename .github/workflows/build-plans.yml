@@ -9,6 +9,10 @@ on:
       - 'index-app/**'
       - 'plans.html'
       - 'plans-app/**'
+      - 'dev.html'
+      - 'dev-app/**'
+      - 'vite.dev.config.js'
+      - 'docs/website-builder-routing.md'
       - 'package.json'
       - 'vite.config.js'
       - 'vite.index.config.js'
@@ -52,7 +56,7 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Build both React pages
+      - name: Build all React pages
         run: npm run build
 
       - name: Verify generated entry points and bundles
@@ -61,13 +65,16 @@ jobs:
           grep -q 'assets/index-app/' index.html
           test -s assets/plans/plans.js
           test -s assets/plans/plans.css
+          test -s dev.html
+          test -s assets/dev/dev.js
+          test -s assets/dev/dev.css
           find assets/index-app -type f -size +0c | grep -q .
-          echo "Verified Index and Plans React bundles."
+          echo "Verified Index, Plans and Dev React bundles."
 
       - name: Commit generated production files
         if: github.event_name == 'push'
         run: |
-          git add -f index.html assets/index-app assets/plans/plans.js assets/plans/plans.css
+          git add -f index.html dev.html assets/index-app assets/plans/plans.js assets/plans/plans.css assets/dev/dev.js assets/dev/dev.css
           if git diff --cached --quiet; then
             echo "Generated production files are already up to date."
             exit 0
