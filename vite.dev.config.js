@@ -2,20 +2,28 @@ import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import { resolve } from 'node:path';
 
+const repositoryRoot = process.cwd();
+const appRoot = resolve(repositoryRoot, 'dev-app');
+const outputDirectory = resolve(repositoryRoot, 'assets', 'dev');
+
 export default defineConfig({
-  root: '.',
+  root: appRoot,
   base: './',
   plugins: [react()],
   build: {
-    outDir: '.',
-    emptyOutDir: false,
-    assetsDir: 'assets/dev',
+    outDir: outputDirectory,
+    emptyOutDir: true,
+    cssCodeSplit: false,
+    sourcemap: false,
     rollupOptions: {
-      input: resolve(process.cwd(), 'dev.html'),
+      input: resolve(appRoot, 'src/main.jsx'),
       output: {
-        entryFileNames: 'assets/dev/dev.js',
-        chunkFileNames: 'assets/dev/chunk-[name]-[hash].js',
-        assetFileNames: 'assets/dev/dev[extname]'
+        entryFileNames: 'dev.js',
+        chunkFileNames: 'chunk-[name].js',
+        assetFileNames: (asset) =>
+          asset.name?.endsWith('.css')
+            ? 'dev.css'
+            : 'assets/[name]-[hash][extname]'
       }
     }
   }
