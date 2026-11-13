@@ -11,6 +11,11 @@ on:
       - 'plans-app/**'
       - 'dev.html'
       - 'dev-app/**'
+      - 'sales-app/**'
+      - 'sales.html'
+      - '404.html'
+      - 'vite.sales.config.js'
+      - 'supabase/migrations/**'
       - 'vite.dev.config.js'
       - 'docs/website-builder-routing.md'
       - 'package.json'
@@ -73,13 +78,17 @@ jobs:
           test -s dev.html
           test -s assets/dev/dev.js
           test -s assets/dev/dev.css
+          test -s sales.html
+          test -s 404.html
+          test -s assets/sales/sales.js
+          test -s assets/sales/sales.css
           find assets/index-app -type f -size +0c | grep -q .
-          echo "Verified Index, Plans and Dev React bundles."
+          echo "Verified Index, Plans, Dev and Sales React bundles."
 
       - name: Commit generated production files
         if: github.event_name == 'push'
         run: |
-          git add -f index.html dev.html assets/index-app assets/plans/plans.js assets/plans/plans.css assets/dev/dev.js assets/dev/dev.css
+          git add -f index.html dev.html assets/index-app assets/plans/plans.js assets/plans/plans.css assets/dev/dev.js assets/dev/dev.css sales.html 404.html assets/sales/sales.js assets/sales/sales.css
           if git diff --cached --quiet; then
             echo "Generated production files are already up to date."
             exit 0
