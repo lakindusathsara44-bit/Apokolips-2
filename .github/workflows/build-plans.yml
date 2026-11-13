@@ -7,8 +7,6 @@ on:
     paths:
       - 'index.html'
       - 'index-app/**'
-      - 'plans.html'
-      - 'plans-app/**'
       - 'dev.html'
       - 'dev-app/**'
       - 'sales-app/**'
@@ -19,7 +17,6 @@ on:
       - 'vite.dev.config.js'
       - 'docs/website-builder-routing.md'
       - 'package.json'
-      - 'vite.config.js'
       - 'vite.index.config.js'
       - '.github/workflows/build-plans.yml'
   pull_request:
@@ -28,8 +25,6 @@ on:
     paths:
       - 'index.html'
       - 'index-app/**'
-      - 'plans.html'
-      - 'plans-app/**'
       - 'dev.html'
       - 'dev-app/**'
       - 'sales-app/**'
@@ -41,7 +36,6 @@ on:
       - 'docs/website-builder-routing.md'
       - 'docs/dev-phase1-supabase.md'
       - 'package.json'
-      - 'vite.config.js'
       - 'vite.index.config.js'
       - '.github/workflows/build-plans.yml'
   workflow_dispatch:
@@ -78,8 +72,6 @@ jobs:
         run: |
           test -s index.html
           grep -q 'assets/index-app/' index.html
-          test -s assets/plans/plans.js
-          test -s assets/plans/plans.css
           test -s dev.html
           test -s assets/dev/dev.js
           test -s assets/dev/dev.css
@@ -87,18 +79,22 @@ jobs:
           test -s 404.html
           test -s assets/sales/sales.js
           test -s assets/sales/sales.css
+          test ! -e plans.html
+          test ! -d plans-app
+          test ! -d assets/plans
           find assets/index-app -type f -size +0c | grep -q .
-          echo "Verified Index, Plans, Dev and Sales React bundles."
+          echo "Verified Index, Dev and Sales React bundles; legacy Plans page is removed."
 
       - name: Commit generated production files
         if: github.event_name == 'push'
         run: |
-          git add -f index.html dev.html assets/index-app assets/plans/plans.js assets/plans/plans.css assets/dev/dev.js assets/dev/dev.css sales.html 404.html assets/sales/sales.js assets/sales/sales.css
+          git add -f index.html dev.html assets/index-app assets/dev/dev.js assets/dev/dev.css sales.html 404.html assets/sales/sales.js assets/sales/sales.css
+          git add -u
           if git diff --cached --quiet; then
             echo "Generated production files are already up to date."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Build React Vite production pages"
+          git commit -m "Build Apokolips React Vite production pages"
           git push origin HEAD:main

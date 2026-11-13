@@ -19,28 +19,31 @@ function App() {
           <img className="brand-icon" src="./file_00000000a7ec820890154ca6ed49b608.ico" alt="" />
           <span>APOKOLIPS</span>
         </a>
-        <button className="theme-toggle" type="button" onClick={() => setDark(value => !value)} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'} aria-pressed={dark}>
-          <span aria-hidden="true">{dark ? '☀' : '☾'}</span><span>{dark ? 'Light mode' : 'Dark mode'}</span>
-        </button>
+        <nav className="header-actions" aria-label="Main actions">
+          <a className="dev-button" href="./dev.html">Open Dev workspace <span aria-hidden="true">↗</span></a>
+          <button className="theme-toggle" type="button" onClick={() => setDark(value => !value)} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'} aria-pressed={dark}>
+            <span aria-hidden="true">{dark ? '☀' : '☾'}</span><span>{dark ? 'Light mode' : 'Dark mode'}</span>
+          </button>
+        </nav>
       </header>
 
       <section className="landing-hero" aria-labelledby="landing-title">
-        <p className="eyebrow">WEBSITE SUBDOMAIN SERVICE</p>
+        <p className="eyebrow">APOKOLIPS WEBSITE PLATFORM</p>
         <h1 id="landing-title">Ideas become<br /><span>something real.</span></h1>
-        <p className="intro">Give your website, business, portfolio, or project a clear and memorable address with an Apokolips.xyz subdomain.</p>
-        <a className="plans-button" href="./plans.html">Explore plans <span aria-hidden="true">↗</span></a>
+        <p className="intro">Create, manage, and publish your website projects with the Apokolips platform.</p>
+        <a className="dev-button hero-dev-button" href="./dev.html">Go to Dev workspace <span aria-hidden="true">↗</span></a>
       </section>
 
       <section className="service-section" aria-labelledby="service-title">
         <div className="section-heading">
-          <p className="section-label">THE SERVICE</p>
-          <h2 id="service-title">A simple address for your next idea.</h2>
-          <p>Apokolips provides custom subdomains under apokolips.xyz, helping your project establish a clear place on the web.</p>
+          <p className="section-label">THE PLATFORM</p>
+          <h2 id="service-title">A practical workspace for your next idea.</h2>
+          <p>Start a website project, edit its pages visually, and manage publication from one dedicated workspace.</p>
         </div>
         <div className="service-grid">
-          <article className="service-card"><span>01</span><h3>Your own subdomain</h3><p>Choose an available name such as <b>yourname.apokolips.xyz</b> for your website or project.</p></article>
-          <article className="service-card"><span>02</span><h3>Use your own hosting</h3><p>Connect the subdomain to a hosting provider that supports custom domains. Your hosting remains under your control.</p></article>
-          <article className="service-card"><span>03</span><h3>Connection guidance</h3><p>Get guidance for the DNS connection process. HTTPS availability depends on your hosting provider.</p></article>
+          <article className="service-card"><span>01</span><h3>Create a website</h3><p>Start a project and choose its public website address.</p></article>
+          <article className="service-card"><span>02</span><h3>Design visually</h3><p>Build pages with the visual editor, responsive layouts, and reusable components.</p></article>
+          <article className="service-card"><span>03</span><h3>Publish your project</h3><p>Manage your website draft and publish it when it is ready.</p></article>
         </div>
       </section>
 
@@ -56,17 +59,17 @@ function App() {
 
       <section className="service-section process-section" aria-labelledby="process-title">
         <div className="section-heading">
-          <p className="section-label">HOW IT WORKS</p>
-          <h2 id="process-title">From a name to an online address.</h2>
+          <p className="section-label">GET STARTED</p>
+          <h2 id="process-title">From a first draft to a published website.</h2>
         </div>
         <ol className="process-list">
-          <li><span>01</span><div><h3>Choose a plan</h3><p>Compare the available monthly packages and select the capacity you need.</p></div></li>
-          <li><span>02</span><div><h3>Send your request</h3><p>Submit your preferred subdomain name and project details by email.</p></div></li>
-          <li><span>03</span><div><h3>Review and connect</h3><p>After availability review, follow the DNS guidance to connect your own hosting.</p></div></li>
+          <li><span>01</span><div><h3>Open Dev</h3><p>Sign in or create your Apokolips account.</p></div></li>
+          <li><span>02</span><div><h3>Create a project</h3><p>Set a project name and its unique website address.</p></div></li>
+          <li><span>03</span><div><h3>Build and publish</h3><p>Use the visual editor, preview your pages, and publish when ready.</p></div></li>
         </ol>
         <div className="closing-cta">
-          <div><p className="section-label">READY TO GET STARTED?</p><h2>Find the right plan for your project.</h2></div>
-          <a className="plans-button" href="./plans.html">View subdomain plans <span aria-hidden="true">↗</span></a>
+          <div><p className="section-label">READY TO BUILD?</p><h2>Start your website project in Dev.</h2></div>
+          <a className="dev-button" href="./dev.html">Open Dev workspace <span aria-hidden="true">↗</span></a>
         </div>
       </section>
 

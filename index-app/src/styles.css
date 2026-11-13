@@ -2,17 +2,19 @@
 *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-width:320px;background:#f5f7fa}
 .landing{width:min(1080px,calc(100% - 48px));min-height:100vh;margin:0 auto;padding:22px 0 20px}
 .site-header{display:flex;align-items:center;justify-content:space-between;padding:0 0 18px;border-bottom:1px solid #dce2e9}
+.header-actions{display:flex;align-items:center;gap:10px}
 .brand{display:inline-flex;align-items:center;gap:10px;color:#173451;text-decoration:none;font-size:12px;font-weight:750;letter-spacing:1.3px}
 .brand-icon{width:30px;height:30px;object-fit:contain}
 .theme-toggle{display:inline-flex;align-items:center;gap:8px;min-height:35px;padding:0 12px;border:1px solid #d5dde7;border-radius:5px;background:#fff;color:#244665;font:inherit;font-size:11px;font-weight:650;cursor:pointer}
-.theme-toggle:hover{border-color:#8da7c1;background:#f4f8fc}.theme-toggle:focus-visible,.plans-button:focus-visible{outline:3px solid #8db5dc;outline-offset:3px}
+.theme-toggle:hover{border-color:#8da7c1;background:#f4f8fc}.theme-toggle:focus-visible,.dev-button:focus-visible{outline:3px solid #8db5dc;outline-offset:3px}
+.dev-button{display:inline-flex;min-height:42px;align-items:center;justify-content:center;gap:14px;padding:0 18px;border:1px solid #183f68;border-radius:5px;background:#183f68;color:#fff;text-decoration:none;font-size:12px;font-weight:700;transition:background .18s ease,transform .18s ease}
+.dev-button:hover{background:#245783;transform:translateY(-2px)}.dev-button span{font-size:16px}
 .landing-hero{padding:92px 18px 86px;text-align:center;animation:rise .6s ease both}
 .eyebrow,.section-label{margin:0 0 15px;color:#526d88;font-size:10px;font-weight:750;letter-spacing:1.5px}
 .landing-hero h1{margin:0;color:#142b49;font-size:clamp(42px,7vw,70px);line-height:1.08;letter-spacing:-2px}
 .landing-hero h1 span{color:#245b91}
 .intro{max-width:620px;margin:22px auto 28px;color:#5e6c7d;font-size:15px;line-height:1.8}
-.plans-button{display:inline-flex;min-height:45px;align-items:center;justify-content:center;gap:16px;padding:0 20px;border:1px solid #183f68;border-radius:5px;background:#183f68;color:#fff;text-decoration:none;font-size:12px;font-weight:700;transition:background .18s ease,transform .18s ease}
-.plans-button:hover{background:#245783;transform:translateY(-2px)}.plans-button span{font-size:16px}
+.hero-dev-button{min-height:46px;padding:0 22px}
 .service-section{padding:48px 0 52px;border-top:1px solid #dce2e9}
 .section-heading{max-width:650px}.section-heading h2,.closing-cta h2{margin:0;color:#173451;font-size:clamp(25px,3.5vw,36px);line-height:1.2;letter-spacing:-.8px}
 .section-heading>p:last-child{max-width:600px;margin:12px 0 0;color:#667486;font-size:13px;line-height:1.8}
@@ -40,6 +42,7 @@
 [data-theme=dark] .service-card,[data-theme=dark] .audience-item,[data-theme=dark] .process-list li{background:#0a0a0a;border-color:#303b47;color:#dce5ee}
 [data-theme=dark] .service-card h3,[data-theme=dark] .process-list h3{color:#e0e9f2}
 [data-theme=dark] .theme-toggle{background:#111;border-color:#3a4e62;color:#e1eaf3}
-[data-theme=dark] .plans-button{background:#315f89;border-color:#477ba9}
-@media(max-width:700px){.landing{width:calc(100% - 32px)}.landing-hero{padding:70px 5px 65px}.service-grid,.process-list{grid-template-columns:1fr}.audience-grid{grid-template-columns:repeat(2,1fr)}.closing-cta{align-items:flex-start;flex-direction:column}.landing-footer{flex-wrap:wrap}}
+[data-theme=dark] .dev-button{background:#315f89;border-color:#477ba9}
+@media(max-width:700px){.landing{width:calc(100% - 32px)}.site-header{align-items:flex-start;gap:12px}.header-actions{flex-wrap:wrap;justify-content:flex-end}.landing-hero{padding:70px 5px 65px}.service-grid,.process-list{grid-template-columns:1fr}.audience-grid{grid-template-columns:repeat(2,1fr)}.closing-cta{align-items:flex-start;flex-direction:column}.landing-footer{flex-wrap:wrap}}
+@media(max-width:420px){.header-actions{gap:6px}.dev-button,.theme-toggle{min-height:36px;padding:0 10px;font-size:10px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
