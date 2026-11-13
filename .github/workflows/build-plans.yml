@@ -1,23 +1,29 @@
-name: Build Apokolips Plans (Vite)
+name: Build Apokolips React + Vite pages
 
 on:
   push:
     branches:
       - main
     paths:
+      - 'index.html'
+      - 'index-app/**'
       - 'plans.html'
       - 'plans-app/**'
       - 'package.json'
       - 'vite.config.js'
+      - 'vite.index.config.js'
       - '.github/workflows/build-plans.yml'
   pull_request:
     branches:
       - main
     paths:
+      - 'index.html'
+      - 'index-app/**'
       - 'plans.html'
       - 'plans-app/**'
       - 'package.json'
       - 'vite.config.js'
+      - 'vite.index.config.js'
       - '.github/workflows/build-plans.yml'
   workflow_dispatch:
 
@@ -25,7 +31,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: apokolips-plans-build
+  group: apokolips-react-vite-build
   cancel-in-progress: false
 
 jobs:
@@ -41,28 +47,32 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 22
+          cache: npm
 
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Build React + Vite assets
+      - name: Build both React pages
         run: npm run build
 
-      - name: Verify generated files
+      - name: Verify generated entry points and bundles
         run: |
+          test -s index.html
+          grep -q 'assets/index-app/' index.html
           test -s assets/plans/plans.js
           test -s assets/plans/plans.css
-          echo "Verified plans.js and plans.css"
+          find assets/index-app -type f -size +0c | grep -q .
+          echo "Verified Index and Plans React bundles."
 
-      - name: Commit generated assets
+      - name: Commit generated production files
         if: github.event_name == 'push'
         run: |
-          git add -f assets/plans/plans.js assets/plans/plans.css
+          git add -f index.html assets/index-app assets/plans/plans.js assets/plans/plans.css
           if git diff --cached --quiet; then
-            echo "Generated plans assets are already up to date."
+            echo "Generated production files are already up to date."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git commit -m "Build React Vite plans assets"
+          git commit -m "Build React Vite production pages"
           git push origin HEAD:main
