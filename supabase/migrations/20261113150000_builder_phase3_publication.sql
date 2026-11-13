@@ -1,7 +1,10 @@
 -- Phase 3: publish and serve customer websites inside Apokolips.
 -- Public reads are restricted to published websites. No customer HTML/JS is executed.
 
-grant select on public.builder_websites, public.builder_website_pages, public.builder_page_components to anon;\ngrant select on public.builder_websites, public.builder_website_pages, public.builder_page_components to authenticated;\n\ncreate policy builder_websites_public_read_published
+grant select on public.builder_websites, public.builder_website_pages, public.builder_page_components to anon;
+grant select on public.builder_websites, public.builder_website_pages, public.builder_page_components to authenticated;
+
+create policy builder_websites_public_read_published
 on public.builder_websites for select to anon, authenticated
 using (hosting_namespace = 'sales' and status = 'published');
 
@@ -84,7 +87,8 @@ begin
 end;
 $$;
 
-revoke all on function public.publish_builder_website(uuid) from public, anon;\nrevoke all on function public.unpublish_builder_website(uuid) from public, anon;
+revoke all on function public.publish_builder_website(uuid) from public, anon;
+revoke all on function public.unpublish_builder_website(uuid) from public, anon;
 revoke all on function public.unpublish_builder_website(uuid) from public, anon;
 grant execute on function public.publish_builder_website(uuid) to authenticated;
 grant execute on function public.unpublish_builder_website(uuid) to authenticated;
