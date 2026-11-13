@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { supabase } from './lib/supabase.js';
+import BuilderEditor from './builder/BuilderEditor.jsx';
 import './styles.css';
 
 const HOST = 'www.sales.apokolips.xyz';
@@ -104,6 +105,7 @@ function App() {
   const [error, setError] = useState('');
   const [activeTab, setActiveTab] = useState('websites');
   const [saving, setSaving] = useState(false);
+  const [editingWebsite, setEditingWebsite] = useState(null);
 
   const previewUrl = useMemo(() => 'https://' + HOST + '/' + (slug || 'your-project'), [slug]);
   const activeWorkspace = workspaces.find(item => item.id === workspaceId);
@@ -237,6 +239,7 @@ function App() {
 
   if (authLoading) return <main className="auth-layout"><div className="loading-panel">Loading your Apokolips workspace…</div></main>;
   if (!user) return <AuthScreen />;
+  if (editingWebsite) return <BuilderEditor website={editingWebsite} user={user} onBack={() => { setEditingWebsite(null); void loadWorkspace(user); }} />;
 
   const visibleProjects = projects.filter(project => project.workspace_id === workspaceId);
 
@@ -286,7 +289,7 @@ function App() {
                 <div className="project-info"><h3>{project.name}</h3><p>{HOST}/{project.slug}</p><small>Updated {new Date(project.updated_at).toLocaleDateString()}</small></div>
                 <span className={project.status === 'published' ? 'published-badge' : 'draft-badge'}>{project.status}</span>
                 <button className="secondary-button" onClick={() => copyUrl(project.slug)}>Copy URL</button>
-                <button className="secondary-button disabled-button" disabled title="Visual editor is planned for the next phase">Editor next</button>
+                <button className="primary-button" onClick={() => setEditingWebsite(project)}>Open editor</button>
               </article>)}
             </div>}
           </section>
