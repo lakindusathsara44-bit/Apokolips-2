@@ -4,11 +4,10 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "build": "vite build",
-    "build:community": "vite build --config community-app/vite.config.ts && tsc -p community-app/tsconfig.json --noEmit",
-    "build:home": "vite build --config vite.home.config.js",
-    "build:blog": "vite build --config vite.blog.config.js",
-    "dev:blog": "vite --config vite.blog.config.js"
+    "dev": "vite --config vite.index.config.js",
+    "build": "vite build --config vite.index.config.js && vite build",
+    "build:plans": "vite build",
+    "preview": "vite preview --config vite.index.config.js"
   },
   "dependencies": {
     "react": "^19.1.0",
