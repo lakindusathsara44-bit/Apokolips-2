@@ -1,8 +1,8 @@
 {
   "name": "Apokolips",
   "short_name": "Apokolips",
-  "description": "The personal portfolio and project portal of Lakindu Sathsara.",
-  "start_url": "./",
+  "description": "Apokolips subdomain plans and applications.",
+  "start_url": "./plans.html",
   "scope": "./",
   "display": "standalone",
   "background_color": "#050609",
