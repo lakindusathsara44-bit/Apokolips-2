@@ -25,6 +25,7 @@ on:
       - main
     paths:
       - 'index.html'
+      - 'plans.html'
       - 'index-app/**'
       - 'dev.html'
       - 'dev-app/**'
