@@ -269,7 +269,7 @@ function App() {
           {activeTab === 'websites' && <button className="primary-button" onClick={() => { setShowCreate(true); setError(''); setNotice(''); }}>＋ Create website</button>}
         </section>
 
-        <div className="connection-notice"><span className="connection-indicator"></span><div><strong>Apokolips database connected</strong><p>Your account, workspace and website drafts are saved securely. Live publishing and the visual editor will be enabled in upcoming phases.</p></div></div>
+        <div className="connection-notice"><span className="connection-indicator"></span><div><strong>Apokolips database connected</strong><p>Your websites and pages are saved securely in Apokolips. Open the visual editor to publish a customer website.</p></div></div>
 
         {error && <div className="dashboard-error" role="alert">{error}<button onClick={() => setError('')} aria-label="Dismiss">×</button></div>}
         {notice && <div className="toast" role="status">{notice}<button onClick={() => setNotice('')} aria-label="Dismiss">×</button></div>}

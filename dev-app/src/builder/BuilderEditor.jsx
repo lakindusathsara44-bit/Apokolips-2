@@ -55,6 +55,9 @@ export default function BuilderEditor({website,user,onBack}) {
   const [future,setFuture]=useState([]);
   const [pageName,setPageName]=useState('');
   const [showPageForm,setShowPageForm]=useState(false);
+  const [publishStatus,setPublishStatus]=useState(website.status||'draft');
+  const [publishing,setPublishing]=useState(false);
+  const [publishNotice,setPublishNotice]=useState('');
   const dragId=useRef(null);
   const savingRef=useRef(false);
   const selectedBlock=blocks.find(x=>x.id===selected)||null;
@@ -130,6 +133,19 @@ export default function BuilderEditor({website,user,onBack}) {
   useEffect(()=>{if(!dirty||loading)return;const timer=setTimeout(()=>void save(),1000);return()=>clearTimeout(timer);},[dirty,loading,save]);
   useEffect(()=>{const handler=e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();void save();}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undo();}};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);});
 
+  async function togglePublish(){
+    if(dirty||saving){setPublishNotice('Save all changes before publishing.');return;}
+    setPublishing(true);setPublishNotice('');
+    try{
+      const action=publishStatus==='published'?'unpublish_builder_website':'publish_builder_website';
+      const {data,error}=await supabase.rpc(action,{p_website_id:website.id});
+      if(error)throw error;
+      setPublishStatus(publishStatus==='published'?'draft':'published');
+      setPublishNotice(publishStatus==='published'?'Website unpublished.':'Website published successfully.');
+    }catch(error){setPublishNotice(error.message||'Could not update publishing status.');}
+    finally{setPublishing(false);}
+  }
+
   async function addPage(e){
     e.preventDefault();const title=pageName.trim();const slug=title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     if(!title||!slug)return;
@@ -162,7 +178,7 @@ export default function BuilderEditor({website,user,onBack}) {
     <header className="builder-topbar">
       <button className="builder-back" onClick={onBack}>← Dashboard</button>
       <div className="builder-project-name"><b>{website.name}</b><span>{website.slug}.sales.apokolips.xyz</span></div>
-      <div className="builder-top-actions"><span className={dirty?'save-status pending':'save-status'}>{saving?'Saving…':dirty?'Unsaved':'Saved'}</span><button onClick={()=>void save()} disabled={!dirty||saving}>Save</button><button onClick={exportJson}>Export layout</button></div>
+      <div className="builder-top-actions"><span className={dirty?'save-status pending':'save-status'}>{saving?'Saving…':dirty?'Unsaved':'Saved'}</span><button onClick={()=>void save()} disabled={!dirty||saving}>Save</button><button onClick={()=>void togglePublish()} disabled={publishing||dirty||saving}>{publishing?'Please wait…':publishStatus==='published'?'Unpublish':'Publish'}</button><button onClick={exportJson}>Export layout</button></div>
     </header>
     <div className="builder-toolbar">
       <div className="builder-page-select"><label>PAGE</label><select value={pageId} onChange={e=>void switchPage(e.target.value)}>{pages.map(p=><option key={p.id} value={p.id}>{p.title}{p.is_homepage?' · Home':''}</option>)}</select><button onClick={()=>setShowPageForm(v=>!v)}>＋ Page</button></div>
@@ -171,6 +187,7 @@ export default function BuilderEditor({website,user,onBack}) {
     </div>
     {showPageForm&&<form className="builder-page-form" onSubmit={addPage}><input value={pageName} onChange={e=>setPageName(e.target.value)} placeholder="New page name" maxLength={100} required/><button type="submit">Create page</button><button type="button" onClick={()=>setShowPageForm(false)}>Cancel</button></form>}
     {error&&<div className="builder-error" role="alert">{error}<button onClick={()=>setError('')}>Dismiss</button></div>}
+    {publishNotice&&<div className="builder-publish-notice" role="status">{publishNotice}{publishStatus==='published'&&<a href={'https://www.sales.apokolips.xyz/'+website.slug} target="_blank" rel="noreferrer">Open published website</a>}</div>}
     <div className="builder-workspace">
       <aside className="builder-palette"><div className="builder-panel-title">ADD ELEMENTS</div>{TYPES.map(([type,label,icon])=><button key={type} onClick={()=>addBlock(type)}><span>{icon}</span>{label}<b>＋</b></button>)}</aside>
       <section className="builder-canvas-area"><div className="canvas-heading"><span>PAGE CANVAS</span><small>Drag blocks to reorder · Select to edit</small></div>
@@ -188,6 +205,6 @@ export default function BuilderEditor({website,user,onBack}) {
         </div>:<div className="inspector-empty">Select an element on the canvas or add one from the left panel.</div>}
       </aside>
     </div>
-    <footer className="builder-footer"><span>{message}</span><span>Preview only · Publishing is not enabled</span></footer>
+    <footer className="builder-footer"><span>{message}</span><span>{publishStatus==='published'?'Published · Public website enabled':'Draft · Not visible to visitors'}</span></footer>
   </div>;
 }
