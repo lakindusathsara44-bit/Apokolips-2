@@ -13,7 +13,15 @@ const exampleNames = ['yourname', 'myportfolio', 'mybusiness', 'shop', 'blog', '
 function App() {
   const [withWww, setWithWww] = useState(false);
   const [copiedDomain, setCopiedDomain] = useState('');
+  const [dark, setDark] = useState(() => {
+    try { return localStorage.getItem('apokolips-theme') === 'dark'; } catch { return false; }
+  });
   const pricing = useMemo(() => plans.map(plan => ({ ...plan, price: plan.standard + (withWww ? plan.count * 50 : 0) })), [withWww]);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = dark ? 'dark' : 'light';
+    try { localStorage.setItem('apokolips-theme', dark ? 'dark' : 'light'); } catch {}
+  }, [dark]);
 
   useEffect(() => {
     const elements = document.querySelectorAll('.reveal');
@@ -59,7 +67,9 @@ function App() {
 
   return <div className="plans-app">
     <main className="plans-container">
-      <div className="plans-kicker"><span className="live-dot" /> APOKOLIPS / SUBDOMAIN SERVICES</div>
+      <div className="plans-kicker"><span className="live-dot" /> APOKOLIPS / SUBDOMAIN SERVICES
+        <button className="theme-toggle" type="button" onClick={() => setDark(value => !value)} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'} aria-pressed={dark}><span aria-hidden="true">{dark ? '☀' : '☾'}</span><span>{dark ? 'Light mode' : 'Dark mode'}</span></button>
+      </div>
       <section className="plans-hero reveal">
         <div className="hero-copy">
           <p className="overline">YOUR IDEA. YOUR OWN ADDRESS.</p>
