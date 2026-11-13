@@ -11,7 +11,7 @@ const safeSegment = value => {
   } catch { return ''; }
 };
 
-function Block({ item }) {
+function Block({ item, pages, siteSlug }) {
   const p = item.properties || {};
   switch (item.component_type) {
     case 'heading': {
@@ -24,7 +24,12 @@ function Block({ item }) {
     case 'container': return <section className="sales-container" style={{ background: safeColor(p.background, '#f4f7fb'), padding: clampNumber(p.padding, 8, 120, 24) }}>{p.text || ''}</section>;
     case 'columns': return <section className="sales-columns"><div>{p.left || ''}</div><div>{p.right || ''}</div></section>;
     case 'card': return <article className="sales-card"><h2>{p.title || ''}</h2><p>{p.text || ''}</p></article>;
-    case 'navbar': return <nav className="sales-nav"><strong>{p.brand || ' '}</strong><div>{String(p.links || '').split(',').map(x => x.trim()).filter(Boolean).map((x,i) => <a key={i} href={'#' + x.toLowerCase().replace(/[^a-z0-9]+/g,'-')}>{x}</a>)}</div></nav>;
+    case 'navbar': return <nav className="sales-nav"><strong>{p.brand || ' '}</strong><div>{String(p.links || '').split(',').map(x => x.trim()).filter(Boolean).map((label,i) => {
+      const normalized = label.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '');
+      const target = pages.find(page => page.slug === normalized || page.title.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') === normalized);
+      const href = target ? (target.is_homepage ? '/' + siteSlug : '/' + siteSlug + '/' + target.slug) : '#';
+      return <a key={i} href={href} aria-disabled={!target}>{label}</a>;
+    })}</div></nav>;
     case 'footer': return <footer className="sales-footer">{p.text || ''}</footer>;
     default: return null;
   }
@@ -38,7 +43,7 @@ function safeColor(value, fallback) { return /^#[0-9a-f]{6}$/i.test(String(value
 function clampNumber(value, min, max, fallback) { const n = Number(value); return Number.isFinite(n) ? Math.min(max, Math.max(min, n)) + 'px' : fallback + 'px'; }
 
 function App() {
-  const [state, setState] = useState({ loading: true, website: null, page: null, blocks: [], error: '' });
+  const [state, setState] = useState({ loading: true, website: null, page: null, pages: [], blocks: [], error: '' });
   useEffect(() => {
     let alive = true;
     async function load() {
@@ -49,15 +54,17 @@ function App() {
       const { data: site, error: siteError } = await supabase.from('builder_websites')
         .select('id,name,slug,status').eq('slug', siteSlug).eq('hosting_namespace','sales').eq('status','published').maybeSingle();
       if (siteError || !site) { if (alive) setState({ loading:false, website:null, page:null, blocks:[], error:'This website is unavailable or has not been published.' }); return; }
-      const pageQuery = supabase.from('builder_website_pages').select('id,title,slug,is_homepage')
-        .eq('website_id', site.id);
-      const { data: page, error: pageError } = pageSlug === 'home'
-        ? await pageQuery.eq('is_homepage', true).maybeSingle()
-        : await pageQuery.eq('slug', pageSlug).maybeSingle();
-      if (pageError || !page) { if (alive) setState({ loading:false, website:site, page:null, blocks:[], error:'This page could not be found.' }); return; }
+      const { data: pages, error: pagesError } = await supabase.from('builder_website_pages')
+        .select('id,title,slug,is_homepage').eq('website_id', site.id).order('page_order');
+      if (pagesError) { if (alive) setState({ loading:false, website:site, page:null, pages:[], blocks:[], error:'This website could not be loaded.' }); return; }
+      const page = pageSlug === 'home'
+        ? (pages || []).find(item => item.is_homepage)
+        : (pages || []).find(item => item.slug === pageSlug);
+      const pageError = null;
+      if (pageError || !page) { if (alive) setState({ loading:false, website:site, page:null, pages:pages || [], blocks:[], error:'This page could not be found.' }); return; }
       const { data: blocks, error: blocksError } = await supabase.from('builder_page_components')
         .select('id,component_type,properties,sort_order').eq('page_id', page.id).order('sort_order');
-      if (alive) setState({ loading:false, website:site, page, blocks:blocksError ? [] : (blocks || []), error:blocksError ? 'This page could not be loaded.' : '' });
+      if (alive) setState({ loading:false, website:site, page, pages:pages || [], blocks:blocksError ? [] : (blocks || []), error:blocksError ? 'This page could not be loaded.' : '' });
     }
     void load();
     return () => { alive = false; };
@@ -65,6 +72,6 @@ function App() {
   useEffect(() => { if (state.website && state.page) document.title = state.page.title + ' | ' + state.website.name; }, [state.website,state.page]);
   if (state.loading) return <main className="sales-state">Loading website…</main>;
   if (state.error) return <main className="sales-state"><div><b>APOKOLIPS</b><h1>{state.error}</h1><p>Published websites are served from the Apokolips platform.</p></div></main>;
-  return <main className="sales-site"><div className="sales-page">{state.blocks.map(item => <Block key={item.id} item={item}/>)}</div><div className="sales-credit">Published with Apokolips</div></main>;
+  return <main className="sales-site"><div className="sales-page">{state.blocks.map(item => <Block key={item.id} item={item} pages={state.pages} siteSlug={state.website.slug}/>)}</div><div className="sales-credit">Published with Apokolips</div></main>;
 }
 createRoot(document.getElementById('sales-root')).render(<App/>);
