@@ -144,7 +144,7 @@ body { margin: 0; background: #f5f7fa; }
 }
 .theme-toggle:hover { border-color: #8da7c1; background: #f4f8fc; }
 .theme-toggle:focus-visible { outline: 3px solid #8db5dc; outline-offset: 3px; }
-[data-theme="dark"] body, [data-theme="dark"] .plans-app { background: #101923; color: #dce5ee; }
+[data-theme="dark"] body, [data-theme="dark"] .plans-app { background: #000000; color: #dce5ee; }
 [data-theme="dark"] .plans-kicker, [data-theme="dark"] .audience-section, [data-theme="dark"] .pricing-section,
 [data-theme="dark"] .how-section, [data-theme="dark"] .examples-section, [data-theme="dark"] .faq-section,
 [data-theme="dark"] .plans-footer { border-color: #2b3a49; }
@@ -161,7 +161,7 @@ body { margin: 0; background: #f5f7fa; }
 [data-theme="dark"] .plan-count, [data-theme="dark"] .plans-footer { color: #bdc9d5; }
 [data-theme="dark"] .domain-preview, [data-theme="dark"] .audience-item, [data-theme="dark"] .www-control,
 [data-theme="dark"] .plan-card, [data-theme="dark"] .step, [data-theme="dark"] .domain-tag {
-  background: #172330; border-color: #304254; color: #dce5ee;
+  background: #0a0a0a; border-color: #304254; color: #dce5ee;
 }
 [data-theme="dark"] .preview-address b, [data-theme="dark"] .plan-card h3,
 [data-theme="dark"] .step h3, [data-theme="dark"] .www-copy b,
@@ -174,7 +174,7 @@ body { margin: 0; background: #f5f7fa; }
 [data-theme="dark"] .preview-line, [data-theme="dark"] .plan-divider,
 [data-theme="dark"] .faq-section details { border-color: #304254; background-color: transparent; }
 [data-theme="dark"] .faq-section details { border-top-color: #304254; }
-[data-theme="dark"] .domain-tag:hover { background: #203247; border-color: #587b9e; }
+[data-theme="dark"] .domain-tag:hover { background: #171717; border-color: #587b9e; }
 [data-theme="dark"] .switch { background: #344657; border-color: #536a80; }
 [data-theme="dark"] .switch-on { background: #376b9a; border-color: #6d9bc5; }
 [data-theme="dark"] .choose-button { background: #315f89; border-color: #477ba9; }
@@ -182,10 +182,10 @@ body { margin: 0; background: #f5f7fa; }
 [data-theme="dark"] .popular-label { background: #315f89; }
 [data-theme="dark"] .plan-popular { border-color: #6285a8; }
 [data-theme="dark"] .copy-status { color: #9bc5eb; }
-[data-theme="dark"] .important-note { background: #28271f; border-color: #5a513d; }
+[data-theme="dark"] .important-note { background: #151515; border-color: #5a513d; }
 [data-theme="dark"] .note-icon { border-color: #b79a61; color: #d7bd88; }
 [data-theme="dark"] .important-note h3, [data-theme="dark"] .important-note strong { color: #e2d2ad; }
 [data-theme="dark"] .important-note p { color: #c2b99f; }
 [data-theme="dark"] .plans-footer a { color: #9bc5eb; }
-[data-theme="dark"] .theme-toggle { background: #1d2b3a; border-color: #3a4e62; color: #e1eaf3; }
-[data-theme="dark"] .theme-toggle:hover { background: #26394d; border-color: #6686a6; }
+[data-theme="dark"] .theme-toggle { background: #111111; border-color: #3a4e62; color: #e1eaf3; }
+[data-theme="dark"] .theme-toggle:hover { background: #202020; border-color: #6686a6; }
