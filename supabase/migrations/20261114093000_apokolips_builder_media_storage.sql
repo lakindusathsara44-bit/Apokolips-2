@@ -3,10 +3,10 @@
 -- Existing builder permission helpers keep workspace editors/members aligned with website access.
 insert into storage.buckets (id,name,public,file_size_limit,allowed_mime_types)
 values ('apokolips-media','apokolips-media',true,104857600,array[
-'image/jpeg','image/png','image/webp','image/gif','image/avif','video/mp4','video/webm','video/ogg',
-'audio/mpeg','audio/mp4','audio/wav','audio/ogg','audio/webm','application/pdf','application/msword',
-'application/vnd.openxmlformats-officedocument.wordprocessingml.document','text/plain','text/csv',
-'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+'image/jpeg','image/png','image/webp','image/gif','image/avif','video/mp4','video/webm','video/ogg','video/quicktime','video/x-msvideo','video/x-matroska',
+'audio/mpeg','audio/mp4','audio/wav','audio/x-wav','audio/ogg','audio/webm','audio/flac','audio/aac','application/pdf','application/msword',
+'application/vnd.openxmlformats-officedocument.wordprocessingml.document','application/vnd.oasis.opendocument.text','application/rtf','text/plain','text/csv',
+'application/vnd.ms-excel','application/vnd.openxmlformats-officedocument.spreadsheetml.sheet','application/vnd.oasis.opendocument.spreadsheet',
 'application/vnd.ms-powerpoint','application/vnd.openxmlformats-officedocument.presentationml.presentation','application/zip'
 ]::text[])
 on conflict(id) do update set public=excluded.public,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
