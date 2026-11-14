@@ -420,11 +420,17 @@ export default function BuilderEditor({website,user,onBack}) {
     setPageId(id);setPageSettings(pageRow?.settings||{});setBlocks(data||[]);setSelected(data?.[0]?.id||'');setDirty(false);setHistory([]);setFuture([]);
   }
   function dragStart(id){dragId.current=id;}
+  function canvasDropPosition(event){
+    const canvas=canvasRef.current;
+    if(!canvas)return null;
+    const rect=canvas.getBoundingClientRect();
+    return {x:Math.max(0,Math.round(event.clientX-rect.left-canvas.clientLeft)),y:Math.max(0,Math.round(event.clientY-rect.top-canvas.clientTop))};
+  }
   function dropOn(id,event){
     const paletteType=event?.dataTransfer?.getData('builder-component-type');
-    if(paletteType&&TYPES.some(t=>t[0]===paletteType)){event.preventDefault();event.stopPropagation();addBlock(paletteType);return;}
+    if(paletteType&&TYPES.some(t=>t[0]===paletteType)){event.preventDefault();event.stopPropagation();addBlock(paletteType,{},canvasDropPosition(event));return;}
     const htmlTag=event?.dataTransfer?.getData('builder-html-tag');
-    if(htmlTag&&HTML_TAGS.includes(htmlTag)){event.preventDefault();event.stopPropagation();addBlock('html',{tag:htmlTag});return;}
+    if(htmlTag&&HTML_TAGS.includes(htmlTag)){event.preventDefault();event.stopPropagation();addBlock('html',{tag:htmlTag},canvasDropPosition(event));return;}
     const from=blocks.findIndex(b=>b.id===dragId.current),to=blocks.findIndex(b=>b.id===id);
     if(from<0||to<0||from===to)return;
     const next=[...blocks];const [item]=next.splice(from,1);next.splice(to,0,item);record(next.map((b,i)=>({...b,sort_order:i})));dragId.current=null;
@@ -519,7 +525,7 @@ const exportWebsiteZip=async()=>{
         </div>}
       </aside>
       <section className="builder-canvas-area"><div className="canvas-heading"><span>PAGE CANVAS</span><small>Drag blocks to reorder · Select to edit</small></div>
-        <div ref={canvasRef} className={'builder-canvas '+device} style={{...pageBackgroundStyle(pageSettings),minHeight:Math.max(600,...blocks.map(b=>Number.isFinite(Number(b.properties?._y))?Number(b.properties._y)+Math.max(40,Number(b.properties?._height)||120)+80:0))}} onDragOver={e=>e.preventDefault()} onDrop={e=>{const tag=e.dataTransfer.getData('builder-html-tag');const type=e.dataTransfer.getData('builder-component-type');const rect=canvasRef.current?.getBoundingClientRect();const position=rect?{x:e.clientX-rect.left-canvasRef.current.clientLeft,y:e.clientY-rect.top-canvasRef.current.clientTop+canvasRef.current.scrollTop}:null;if(tag&&HTML_TAGS.includes(tag)){e.preventDefault();addBlock('html',{tag},position);}else if(type&&TYPES.some(t=>t[0]===type)){e.preventDefault();addBlock(type,{},position);}}}>
+        <div ref={canvasRef} className={'builder-canvas '+device} style={{...pageBackgroundStyle(pageSettings),minHeight:Math.max(600,...blocks.map(b=>Number.isFinite(Number(b.properties?._y))?Number(b.properties._y)+Math.max(40,Number(b.properties?._height)||120)+80:0))}} onDragOver={e=>e.preventDefault()} onDrop={e=>{const tag=e.dataTransfer.getData('builder-html-tag');const type=e.dataTransfer.getData('builder-component-type');const position=canvasDropPosition(e);if(tag&&HTML_TAGS.includes(tag)){e.preventDefault();addBlock('html',{tag},position);}else if(type&&TYPES.some(t=>t[0]===type)){e.preventDefault();addBlock(type,{},position);}}}>
           <div className="canvas-site-head"><b>{website.name}</b><span>{page?.title||'Home'}</span></div>
           {blocks.length?blocks.map((b)=><div key={b.id} draggable onDragStart={()=>dragStart(b.id)} onDragOver={e=>e.preventDefault()} onDrop={e=>dropOn(b.id,e)} style={b.properties?._x!==undefined&&b.properties?._y!==undefined?{position:'absolute',left:Math.max(0,Number(b.properties._x)||0),top:Math.max(0,Number(b.properties._y)||0),width:b.properties._width?Math.max(80,Number(b.properties._width))+'px':'auto',height:b.properties._height?Math.max(40,Number(b.properties._height))+'px':'auto',zIndex:b.id===selected?2:1}:undefined}>{renderBlock(b,b.id===selected,setSelected,false,startResize)}<div className="canvas-reorder"><button onClick={()=>move(b.id,-1)}>↑</button><button onClick={()=>move(b.id,1)}>↓</button></div></div>):<div className="canvas-empty"><b>Start building this page</b><p>Choose an element from the left panel to add it to your canvas.</p></div>}
           <div className="canvas-end">End of page</div>
