@@ -62,6 +62,8 @@ function pageBackgroundStyle(settings={}) {
   const safeImage=/^https:\/\//i.test(image)?image.replace(/["\\\n\r]/g,''):'';
   return {
     backgroundColor:safeColor(settings.backgroundColor,'#ffffff'),
+    color:safeColor(settings.textColor,'#172033'),
+    '--page-link-color':safeColor(settings.linkColor,'#24446f'),
     backgroundImage:safeImage?'url("'+safeImage+'")':'none',
     backgroundSize:['cover','contain','auto'].includes(settings.backgroundSize)?settings.backgroundSize:'cover',
     backgroundPosition:['center center','top center','bottom center','left center','right center','left top','right top','left bottom','right bottom'].includes(settings.backgroundPosition)?settings.backgroundPosition:'center center',
