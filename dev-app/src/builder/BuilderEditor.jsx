@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 
-const HTML_TAGS = 'a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr i iframe img input ins kbd label legend li link main map mark menu meta meter nav noscript object ol optgroup option output p picture pre progress q rp rt ruby s samp script search section select slot small source span strong style sub summary sup table tbody td template textarea tfoot th thead time title tr track u ul var video wbr'.split(' ');
+const HTML_TAGS = 'a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr i iframe img input ins kbd label legend li link main map mark menu meta meter nav noscript object ol optgroup option output p picture pre progress q rp rt rtc ruby s samp script search section select slot small source span strong style sub summary sup svg table tbody td template textarea tfoot th thead time title tr track u ul var video wbr math'.split(' ');
 const VOID_TAGS = new Set('area base br col embed hr img input link meta source track wbr'.split(' '));
 const TYPES = [
   ['heading','Heading','Aa'],['text','Text','¶'],['button','Button','▰'],
@@ -99,6 +99,8 @@ export default function BuilderEditor({website,user,onBack}) {
   const [error,setError]=useState('');
   const [device,setDevice]=useState('desktop');
   const [tab,setTab]=useState('properties');
+  const [builderPanel,setBuilderPanel]=useState('elements');
+  const [tagSearch,setTagSearch]=useState('');
   const [showJson,setShowJson]=useState(false);
   const [jsonText,setJsonText]=useState('');
   const [history,setHistory]=useState([]);
@@ -295,7 +297,30 @@ const exportWebsiteZip=async()=>{
     {error&&<div className="builder-error" role="alert">{error}<button onClick={()=>setError('')}>Dismiss</button></div>}
     {publishNotice&&<div className="builder-publish-notice" role="status">{publishNotice}{publishStatus==='published'&&<a href={'https://www.sales.apokolips.xyz/'+website.slug} target="_blank" rel="noreferrer">Open published website</a>}</div>}
     <div className="builder-workspace">
-      <aside className="builder-palette"><div className="builder-panel-title">ADD ELEMENTS</div>{TYPES.map(([type,label,icon])=><button key={type} draggable onDragStart={e=>e.dataTransfer.setData('builder-component-type',type)} onClick={()=>addBlock(type)}><span>{icon}</span>{label}<b>＋</b></button>)}<details className="html-tag-library"><summary>HTML TAG LIBRARY · {HTML_TAGS.length}</summary><div>{HTML_TAGS.map(tag=><button key={tag} draggable onDragStart={e=>e.dataTransfer.setData('builder-html-tag',tag)} onClick={()=>addBlock('html',{tag})}>&lt;{tag}&gt;</button>)}</div></details></aside>
+      <aside className="builder-palette">
+        <div className="builder-panel-title">BUILDER TOOLBOX</div>
+        <div className="builder-tool-tabs" role="tablist" aria-label="Builder tools">
+          <button className={builderPanel==='elements'?'active':''} onClick={()=>setBuilderPanel('elements')}>Blocks</button>
+          <button className={builderPanel==='html'?'active':''} onClick={()=>setBuilderPanel('html')}>HTML</button>
+          <button className={builderPanel==='css'?'active':''} onClick={()=>setBuilderPanel('css')}>CSS</button>
+          <button className={builderPanel==='js'?'active':''} onClick={()=>setBuilderPanel('js')}>JS</button>
+        </div>
+        {builderPanel==='elements'&&<div className="builder-tool-content">{TYPES.filter(([type])=>type!=='html').map(([type,label,icon])=><button key={type} draggable onDragStart={e=>e.dataTransfer.setData('builder-component-type',type)} onClick={()=>addBlock(type)}><span>{icon}</span>{label}<b>＋</b></button>)}</div>}
+        {builderPanel==='html'&&<div className="builder-tool-content html-tool-content">
+          <label className="tag-search-label">SEARCH HTML TAGS<input value={tagSearch} onChange={e=>setTagSearch(e.target.value)} placeholder="Search tags… (e.g. input, video)"/></label>
+          <div className="html-tag-count">{HTML_TAGS.filter(tag=>tag.includes(tagSearch.trim().toLowerCase())).length} of {HTML_TAGS.length} tags · Tap to add or drag to canvas</div>
+          <div className="html-tag-grid">{HTML_TAGS.filter(tag=>tag.includes(tagSearch.trim().toLowerCase())).map(tag=><button key={tag} draggable onDragStart={e=>e.dataTransfer.setData('builder-html-tag',tag)} onClick={()=>addBlock('html',{tag})}>&lt;{tag}&gt;<span>＋</span></button>)}</div>
+          {selectedBlock?.component_type==='html'&&<div className="html-selected-note">Selected: <b>&lt;{selectedBlock.properties?.tag||'div'}&gt;</b>. Edit its attributes in Properties.</div>}
+        </div>}
+        {builderPanel==='css'&&<div className="builder-tool-content code-tool-content">
+          <div className="code-panel-heading">CUSTOM CSS <span>For selected HTML element</span></div>
+          {selectedBlock?.component_type==='html'?<><textarea aria-label="Custom CSS" key={selectedBlock.id+'-tool-css'} defaultValue={selectedBlock.properties.customCSS||''} spellCheck="false" placeholder={"/* CSS for this element */\ncolor: #172033;\npadding: 16px;"} onBlur={e=>updateProp('customCSS',e.target.value)}/><p>CSS is included in the exported website. Preview updates after saving the field.</p></>:<div className="tool-empty">Select an HTML element on the canvas to edit its CSS.</div>}
+        </div>}
+        {builderPanel==='js'&&<div className="builder-tool-content code-tool-content">
+          <div className="code-panel-heading">CUSTOM JAVASCRIPT <span>Exported as script.js</span></div>
+          {selectedBlock?.component_type==='html'?<><textarea aria-label="Custom JavaScript" key={selectedBlock.id+'-tool-js'} defaultValue={selectedBlock.properties.customJS||''} spellCheck="false" placeholder={"// Runs on the published website\nconsole.log('Hello from Apokolips');"} onBlur={e=>updateProp('customJS',e.target.value)}/><p>JavaScript runs on the exported/published website, not inside the visual editor preview. Use DOMContentLoaded for page setup.</p></>:<div className="tool-empty">Select an HTML element on the canvas to edit its JavaScript.</div>}
+        </div>}
+      </aside>
       <section className="builder-canvas-area"><div className="canvas-heading"><span>PAGE CANVAS</span><small>Drag blocks to reorder · Select to edit</small></div>
         <div className={'builder-canvas '+device} onDragOver={e=>e.preventDefault()} onDrop={e=>{const tag=e.dataTransfer.getData('builder-html-tag');const type=e.dataTransfer.getData('builder-component-type');if(tag&&HTML_TAGS.includes(tag)){e.preventDefault();addBlock('html',{tag});}else if(type&&TYPES.some(t=>t[0]===type)){e.preventDefault();addBlock(type);}}}>
           <div className="canvas-site-head"><b>{website.name}</b><span>{page?.title||'Home'}</span></div>
