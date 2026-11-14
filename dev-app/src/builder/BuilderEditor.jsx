@@ -162,8 +162,8 @@ export default function BuilderEditor({website,user,onBack}) {
   const record=(next)=>{
     setHistory(h=>[...h.slice(-39),clone(blocks)]);setFuture([]);setBlocks(next);setDirty(true);setMessage('Unsaved changes');
   };
-  const addBlock=(type)=>{
-    const item={id:makeLocalId(),page_id:pageId,component_type:type,properties:clone(defaults[type]),sort_order:blocks.length};
+  const addBlock=(type,overrides={})=>{
+    const item={id:makeLocalId(),page_id:pageId,component_type:type,properties:{...clone(defaults[type]),...overrides},sort_order:blocks.length};
     record([...blocks,item]);setSelected(item.id);setTab('properties');
   };
   const updateProp=(key,value)=>{
@@ -237,7 +237,11 @@ export default function BuilderEditor({website,user,onBack}) {
     setPageId(id);setBlocks(data||[]);setSelected(data?.[0]?.id||'');setDirty(false);setHistory([]);setFuture([]);
   }
   function dragStart(id){dragId.current=id;}
-  function dropOn(id){
+  function dropOn(id,event){
+    const paletteType=event?.dataTransfer?.getData('builder-component-type');
+    if(paletteType&&TYPES.some(t=>t[0]===paletteType)){event.preventDefault();addBlock(paletteType);return;}
+    const htmlTag=event?.dataTransfer?.getData('builder-html-tag');
+    if(htmlTag&&HTML_TAGS.includes(htmlTag)){event.preventDefault();addBlock('html',{tag:htmlTag});return;}
     const from=blocks.findIndex(b=>b.id===dragId.current),to=blocks.findIndex(b=>b.id===id);
     if(from<0||to<0||from===to)return;
     const next=[...blocks];const [item]=next.splice(from,1);next.splice(to,0,item);record(next.map((b,i)=>({...b,sort_order:i})));dragId.current=null;
@@ -291,11 +295,11 @@ const exportWebsiteZip=async()=>{
     {error&&<div className="builder-error" role="alert">{error}<button onClick={()=>setError('')}>Dismiss</button></div>}
     {publishNotice&&<div className="builder-publish-notice" role="status">{publishNotice}{publishStatus==='published'&&<a href={'https://www.sales.apokolips.xyz/'+website.slug} target="_blank" rel="noreferrer">Open published website</a>}</div>}
     <div className="builder-workspace">
-      <aside className="builder-palette"><div className="builder-panel-title">ADD ELEMENTS</div>{TYPES.map(([type,label,icon])=><button key={type} onClick={()=>addBlock(type)}><span>{icon}</span>{label}<b>＋</b></button>)}</aside>
+      <aside className="builder-palette"><div className="builder-panel-title">ADD ELEMENTS</div>{TYPES.map(([type,label,icon])=><button key={type} draggable onDragStart={e=>e.dataTransfer.setData('builder-component-type',type)} onClick={()=>addBlock(type)}><span>{icon}</span>{label}<b>＋</b></button>)}<details className="html-tag-library"><summary>HTML TAG LIBRARY · {HTML_TAGS.length}</summary><div>{HTML_TAGS.map(tag=><button key={tag} draggable onDragStart={e=>e.dataTransfer.setData('builder-html-tag',tag)} onClick={()=>addBlock('html',{tag})}>&lt;{tag}&gt;</button>)}</div></details></aside>
       <section className="builder-canvas-area"><div className="canvas-heading"><span>PAGE CANVAS</span><small>Drag blocks to reorder · Select to edit</small></div>
         <div className={'builder-canvas '+device}>
           <div className="canvas-site-head"><b>{website.name}</b><span>{page?.title||'Home'}</span></div>
-          {blocks.length?blocks.map((b)=><div key={b.id} draggable onDragStart={()=>dragStart(b.id)} onDragOver={e=>e.preventDefault()} onDrop={()=>dropOn(b.id)}>{renderBlock(b,b.id===selected,setSelected,false,startResize)}<div className="canvas-reorder"><button onClick={()=>move(b.id,-1)}>↑</button><button onClick={()=>move(b.id,1)}>↓</button></div></div>):<div className="canvas-empty"><b>Start building this page</b><p>Choose an element from the left panel to add it to your canvas.</p></div>}
+          {blocks.length?blocks.map((b)=><div key={b.id} draggable onDragStart={()=>dragStart(b.id)} onDragOver={e=>e.preventDefault()} onDrop={e=>dropOn(b.id,e)}>{renderBlock(b,b.id===selected,setSelected,false,startResize)}<div className="canvas-reorder"><button onClick={()=>move(b.id,-1)}>↑</button><button onClick={()=>move(b.id,1)}>↓</button></div></div>):<div className="canvas-empty"><b>Start building this page</b><p>Choose an element from the left panel to add it to your canvas.</p></div>}
           <div className="canvas-end">End of page</div>
         </div>
       </section>
