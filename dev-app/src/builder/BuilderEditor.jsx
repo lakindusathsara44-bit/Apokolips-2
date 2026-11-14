@@ -420,11 +420,17 @@ export default function BuilderEditor({website,user,onBack}) {
     setPageId(id);setPageSettings(pageRow?.settings||{});setBlocks(data||[]);setSelected(data?.[0]?.id||'');setDirty(false);setHistory([]);setFuture([]);
   }
   function dragStart(id){dragId.current=id;}
+  function canvasDropPosition(event){
+    const canvas=canvasRef.current;
+    if(!canvas)return null;
+    const rect=canvas.getBoundingClientRect();
+    return {x:Math.max(0,Math.round(event.clientX-rect.left-canvas.clientLeft)),y:Math.max(0,Math.round(event.clientY-rect.top-canvas.clientTop))};
+  }
   function dropOn(id,event){
     const paletteType=event?.dataTransfer?.getData('builder-component-type');
-    if(paletteType&&TYPES.some(t=>t[0]===paletteType)){event.preventDefault();event.stopPropagation();addBlock(paletteType);return;}
+    if(paletteType&&TYPES.some(t=>t[0]===paletteType)){event.preventDefault();event.stopPropagation();addBlock(paletteType,{},canvasDropPosition(event));return;}
     const htmlTag=event?.dataTransfer?.getData('builder-html-tag');
-    if(htmlTag&&HTML_TAGS.includes(htmlTag)){event.preventDefault();event.stopPropagation();addBlock('html',{tag:htmlTag});return;}
+    if(htmlTag&&HTML_TAGS.includes(htmlTag)){event.preventDefault();event.stopPropagation();addBlock('html',{tag:htmlTag},canvasDropPosition(event));return;}
     const from=blocks.findIndex(b=>b.id===dragId.current),to=blocks.findIndex(b=>b.id===id);
     if(from<0||to<0||from===to)return;
     const next=[...blocks];const [item]=next.splice(from,1);next.splice(to,0,item);record(next.map((b,i)=>({...b,sort_order:i})));dragId.current=null;
