@@ -3,7 +3,17 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="theme-color" content="#05080f" />
+  <meta name="theme-color" content="#f5f7fa" />
+<script>
+(() => {
+  const key = 'apokolips-theme';
+  const apply = value => { document.documentElement.dataset.theme = value === 'dark' ? 'dark' : 'light'; };
+  try { apply(localStorage.getItem(key) || 'light'); } catch { apply('light'); }
+  window.addEventListener('storage', event => {
+    if (event.key === key && (event.newValue === 'dark' || event.newValue === 'light')) apply(event.newValue);
+  });
+})();
+</script>
   <meta name="description" content="Choose an Apokolips subdomain plan for your website project." />
   <title>Subdomain Plans | Apokolips</title>
   <link rel="icon" type="image/x-icon" href="./file_00000000a7ec820890154ca6ed49b608.ico" />
@@ -47,6 +57,11 @@
     @media(max-width:900px){.plan-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
     @media(max-width:560px){.wrap{width:calc(100% - 30px)}.hero{padding:48px 5px 30px}.plan-grid,.steps{grid-template-columns:1fr}.plan{padding:21px}.plan:hover,.plan:focus-within{transform:translateY(-3px) scale(1.005)}footer{flex-direction:column}}
     @media(prefers-reduced-motion:reduce){*,*::before,*::after{transition-duration:.01ms!important;scroll-behavior:auto!important}}
+  
+    /* Shared Apokolips theme preference: dark mode inverts this light plan page. */
+    html[data-theme="dark"] body{filter:invert(1) hue-rotate(180deg)}
+    html[data-theme="dark"] body img,html[data-theme="dark"] body svg{filter:invert(1) hue-rotate(180deg)}
+    @media(prefers-reduced-motion:no-preference){body{transition:filter .22s ease}}
   </style>
 </head>
 <body>
