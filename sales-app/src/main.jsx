@@ -29,6 +29,18 @@ function Block({ item }) {
     default: return null;
   }
 }
+function pageBackgroundStyle(settings={}) {
+  const image=String(settings.backgroundImage||'').trim();
+  const safeImage=/^https:\/\//i.test(image)?image.replace(/["\\\n\r]/g,''):'';
+  return {
+    backgroundColor:safeColor(settings.backgroundColor,'#ffffff'),
+    backgroundImage:safeImage?'url("'+safeImage+'")':'none',
+    backgroundSize:['cover','contain','auto'].includes(settings.backgroundSize)?settings.backgroundSize:'cover',
+    backgroundPosition:['center center','top center','bottom center','left center','right center','left top','right top','left bottom','right bottom'].includes(settings.backgroundPosition)?settings.backgroundPosition:'center center',
+    backgroundRepeat:['no-repeat','repeat','repeat-x','repeat-y'].includes(settings.backgroundRepeat)?settings.backgroundRepeat:'no-repeat',
+    backgroundAttachment:['scroll','fixed'].includes(settings.backgroundAttachment)?settings.backgroundAttachment:'scroll'
+  };
+}
 function safeHref(value) {
   const href = String(value || '#');
   if (/^(https?:|mailto:|tel:|#|\/)/i.test(href) && !/^\/\//.test(href)) return href;
@@ -49,7 +61,7 @@ function App() {
       const { data: site, error: siteError } = await supabase.from('builder_websites')
         .select('id,name,slug,status').eq('slug', siteSlug).eq('hosting_namespace','sales').eq('status','published').maybeSingle();
       if (siteError || !site) { if (alive) setState({ loading:false, website:null, page:null, blocks:[], error:'This website is unavailable or has not been published.' }); return; }
-      const pageQuery = supabase.from('builder_website_pages').select('id,title,slug,is_homepage')
+      const pageQuery = supabase.from('builder_website_pages').select('id,title,slug,is_homepage,settings')
         .eq('website_id', site.id);
       const { data: page, error: pageError } = pageSlug === 'home'
         ? await pageQuery.eq('is_homepage', true).maybeSingle()
@@ -65,6 +77,6 @@ function App() {
   useEffect(() => { if (state.website && state.page) document.title = state.page.title + ' | ' + state.website.name; }, [state.website,state.page]);
   if (state.loading) return <main className="sales-state">Loading website…</main>;
   if (state.error) return <main className="sales-state"><div><b>APOKOLIPS</b><h1>{state.error}</h1><p>Published websites are served from the Apokolips platform.</p></div></main>;
-  return <main className="sales-site"><div className="sales-page">{state.blocks.map(item => <Block key={item.id} item={item}/>)}</div><div className="sales-credit">Published with Apokolips</div></main>;
+  return <main className="sales-site" style={pageBackgroundStyle(state.page.settings)}><div className="sales-page">{state.blocks.map(item => <Block key={item.id} item={item}/>)}</div><div className="sales-credit">Published with Apokolips</div></main>;
 }
 createRoot(document.getElementById('sales-root')).render(<App/>);
