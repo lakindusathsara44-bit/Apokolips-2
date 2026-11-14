@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 
-const HTML_TAGS = 'a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr i iframe img input ins kbd label legend li link main map mark menu meta meter nav noscript object ol optgroup option output p picture pre progress q rp rt ruby s samp script search section select slot small source span strong style sub summary sup table tbody td template textarea tfoot th thead time title tr track u ul var video wbr'.split(' ');
+const HTML_TAGS = 'a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr i iframe img input ins kbd label legend li link main map mark menu meta meter nav noscript object ol optgroup option output p picture pre progress q rp rt rtc ruby s samp script search section select slot small source span strong style sub summary sup svg table tbody td template textarea tfoot th thead time title tr track u ul var video wbr math'.split(' ');
 const VOID_TAGS = new Set('area base br col embed hr img input link meta source track wbr'.split(' '));
 const TYPES = [
   ['heading','Heading','Aa'],['text','Text','¶'],['button','Button','▰'],
@@ -23,6 +23,7 @@ const defaults = {
   html:{tag:'div',content:'Custom HTML element',attributes:'{}',styles:'{}',customCSS:'',customJS:''}
 };
 const clone = value => JSON.parse(JSON.stringify(value));
+const parseObject = value => { try { const parsed=JSON.parse(value||"{}"); return parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?parsed:{}; } catch { return {}; } };
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const makeExportMarkup = item => {
   const p=item.properties||{};
@@ -82,7 +83,7 @@ function renderBlock(item, selected, onSelect, preview, onResizeStart) {
     case 'navbar': return <div {...common}><span className="block-kind">NAVIGATION</span><nav className="site-nav"><b>{p.brand||'Brand'}</b><span>{(p.links||'Home, About, Contact').split(',').map(x=>x.trim()).filter(Boolean).join('   ·   ')}</span></nav></div>;
     case 'footer': return <div {...common}><span className="block-kind">FOOTER</span><footer className="site-footer">{p.text||'Footer text'}</footer></div>;
     case 'table': {const headers=(p.headers||'Column 1, Column 2').split(',').map(x=>x.trim());let rows=[],ta={},ha={},ca={};try{rows=JSON.parse(p.rows||'[]')}catch{}try{ta=JSON.parse(p.tableAttributes||'{}')}catch{}try{ha=JSON.parse(p.headerAttributes||'{}')}catch{}try{ca=JSON.parse(p.cellAttributes||'{}')}catch{}const clean=o=>{const out={};Object.entries(o).forEach(([k,v])=>{if(/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(k)&&!/^on/i.test(k))out[k]=v});return out;};return <div {...common}><span className="block-kind">TABLE</span><table className="builder-table" {...clean(ta)}><caption>{p.caption}</caption><thead><tr>{headers.map((h,i)=><th key={i} {...clean(ha)}>{h}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i}>{headers.map((_,j)=><td key={j} {...clean(ca)}>{row&&row[j]!==undefined?row[j]:''}</td>)}</tr>)}</tbody></table></div>;}
-    case 'html': {const tag=HTML_TAGS.includes(p.tag)?p.tag:'div';let attrs={},styles={};try{attrs=JSON.parse(p.attributes||'{}')}catch{}try{styles=JSON.parse(p.styles||'{}')}catch{}const safeAttrs={};Object.entries(attrs).forEach(([k,v])=>{if(/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(k)&&!/^on/i.test(k)&&k!=='style')safeAttrs[k==='class'?'className':k==='for'?'htmlFor':k]=v;});const safeStyles={};Object.entries(styles).forEach(([k,v])=>{if(/^[a-zA-Z][a-zA-Z0-9]*$/.test(k))safeStyles[k]=v;});return <div {...common}><span className="block-kind">HTML · &lt;{tag}&gt;</span>{React.createElement(tag,{...safeAttrs,style:safeStyles},VOID_TAGS.has(tag)?undefined:(p.content||''))}</div>;}
+    case 'html': {const tag=HTML_TAGS.includes(p.tag)?p.tag:'div';let attrs={},styles={};try{attrs=JSON.parse(p.attributes||'{}')}catch{}try{styles=JSON.parse(p.styles||'{}')}catch{}const safeAttrs={};Object.entries(attrs).forEach(([k,v])=>{if(/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(k)&&!/^on/i.test(k)&&k!=='style')safeAttrs[k==='class'?'className':k==='for'?'htmlFor':k]=v;});const safeStyles={};Object.entries(styles).forEach(([k,v])=>{if(/^[a-zA-Z][a-zA-Z0-9]*$/.test(k))safeStyles[k]=v;});return <div {...common}>{p.customCSS&&<style>{p.customCSS}</style>}<span className="block-kind">HTML · &lt;{tag}&gt;</span>{React.createElement(tag,{...safeAttrs,style:safeStyles},VOID_TAGS.has(tag)?undefined:(p.content||''))}</div>;}
     default:return null;
   }
 }
@@ -99,6 +100,8 @@ export default function BuilderEditor({website,user,onBack}) {
   const [error,setError]=useState('');
   const [device,setDevice]=useState('desktop');
   const [tab,setTab]=useState('properties');
+  const [builderPanel,setBuilderPanel]=useState('elements');
+  const [tagSearch,setTagSearch]=useState('');
   const [showJson,setShowJson]=useState(false);
   const [jsonText,setJsonText]=useState('');
   const [history,setHistory]=useState([]);
@@ -295,7 +298,45 @@ const exportWebsiteZip=async()=>{
     {error&&<div className="builder-error" role="alert">{error}<button onClick={()=>setError('')}>Dismiss</button></div>}
     {publishNotice&&<div className="builder-publish-notice" role="status">{publishNotice}{publishStatus==='published'&&<a href={'https://www.sales.apokolips.xyz/'+website.slug} target="_blank" rel="noreferrer">Open published website</a>}</div>}
     <div className="builder-workspace">
-      <aside className="builder-palette"><div className="builder-panel-title">ADD ELEMENTS</div>{TYPES.map(([type,label,icon])=><button key={type} draggable onDragStart={e=>e.dataTransfer.setData('builder-component-type',type)} onClick={()=>addBlock(type)}><span>{icon}</span>{label}<b>＋</b></button>)}<details className="html-tag-library"><summary>HTML TAG LIBRARY · {HTML_TAGS.length}</summary><div>{HTML_TAGS.map(tag=><button key={tag} draggable onDragStart={e=>e.dataTransfer.setData('builder-html-tag',tag)} onClick={()=>addBlock('html',{tag})}>&lt;{tag}&gt;</button>)}</div></details></aside>
+      <aside className="builder-palette">
+        <div className="builder-panel-title">BUILDER TOOLBOX</div>
+        <div className="builder-tool-tabs" role="tablist" aria-label="Builder tools">
+          <button className={builderPanel==='elements'?'active':''} onClick={()=>setBuilderPanel('elements')}>Blocks</button>
+          <button className={builderPanel==='html'?'active':''} onClick={()=>setBuilderPanel('html')}>HTML</button>
+          <button className={builderPanel==='css'?'active':''} onClick={()=>setBuilderPanel('css')}>CSS</button>
+          <button className={builderPanel==='js'?'active':''} onClick={()=>setBuilderPanel('js')}>JS</button>
+        </div>
+        {builderPanel==='elements'&&<div className="builder-tool-content">{TYPES.filter(([type])=>type!=='html').map(([type,label,icon])=><button key={type} draggable onDragStart={e=>e.dataTransfer.setData('builder-component-type',type)} onClick={()=>addBlock(type)}><span>{icon}</span>{label}<b>＋</b></button>)}</div>}
+        {builderPanel==='html'&&<div className="builder-tool-content html-tool-content">
+          <label className="tag-search-label">SEARCH HTML TAGS<input value={tagSearch} onChange={e=>setTagSearch(e.target.value)} placeholder="Search tags… (e.g. input, video)"/></label>
+          <div className="html-tag-count">{HTML_TAGS.filter(tag=>tag.includes(tagSearch.trim().toLowerCase())).length} of {HTML_TAGS.length} tags · Tap to add or drag to canvas</div>
+          <div className="html-tag-grid">{HTML_TAGS.filter(tag=>tag.includes(tagSearch.trim().toLowerCase())).map(tag=><button key={tag} draggable onDragStart={e=>e.dataTransfer.setData('builder-html-tag',tag)} onClick={()=>addBlock('html',{tag})}>&lt;{tag}&gt;<span>＋</span></button>)}</div>
+          {selectedBlock?.component_type==='html'&&<>
+            <div className="html-selected-note">Selected: <b>&lt;{selectedBlock.properties?.tag||'div'}&gt;</b></div>
+            <div className="quick-attributes"><b>COMMON ATTRIBUTES</b>
+              {['id','class','title','role','aria-label','href','target','rel','src','alt','type','name','placeholder','value'].map(key=><label key={key}>{key}<input value={String(parseObject(selectedBlock.properties.attributes)[key]??'')} placeholder={key} onChange={e=>{const attrs=parseObject(selectedBlock.properties.attributes);if(e.target.value==='')delete attrs[key];else attrs[key]=e.target.value;updateProp('attributes',JSON.stringify(attrs));}}/></label>)}
+              {['required','disabled','checked','multiple','readonly','autofocus'].map(key=><label className="attribute-check" key={key}><input type="checkbox" checked={key in parseObject(selectedBlock.properties.attributes)} onChange={e=>{const attrs=parseObject(selectedBlock.properties.attributes);if(e.target.checked)attrs[key]=true;else delete attrs[key];updateProp('attributes',JSON.stringify(attrs));}}/> {key}</label>)}
+              <p>Any additional or tag-specific attribute can be entered in Properties → HTML attributes (JSON).</p>
+            </div>
+          </>}
+        </div>}
+        {builderPanel==='css'&&<div className="builder-tool-content code-tool-content">
+          <div className="code-panel-heading">CSS EDITOR <span>Inline styles + custom stylesheet</span></div>
+          {selectedBlock?.component_type==='html'?<>
+            <label className="css-json-label">CSS properties (JSON)
+              <textarea aria-label="CSS properties JSON" key={selectedBlock.id+'-tool-styles'} defaultValue={selectedBlock.properties.styles||'{}'} spellCheck="false" onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('CSS properties must be a JSON object.');updateProp('styles',JSON.stringify(v));}catch(err){setError(err.message);}}}/>
+            </label>
+            <label className="css-code-label">Custom CSS stylesheet
+              <textarea aria-label="Custom CSS" key={selectedBlock.id+'-tool-css'} defaultValue={selectedBlock.properties.customCSS||''} spellCheck="false" placeholder={"/* Write complete CSS rules */\n.my-section {\n  color: #172033;\n  padding: 16px;\n}"} onBlur={e=>updateProp('customCSS',e.target.value)}/>
+            </label>
+            <p>Custom CSS is included in the exported website and visual preview. Use complete CSS selectors and rules.</p>
+          </>:<div className="tool-empty">Select an HTML element on the canvas to edit its CSS.</div>}
+        </div>}
+        {builderPanel==='js'&&<div className="builder-tool-content code-tool-content">
+          <div className="code-panel-heading">CUSTOM JAVASCRIPT <span>Exported as script.js</span></div>
+          {selectedBlock?.component_type==='html'?<><textarea aria-label="Custom JavaScript" key={selectedBlock.id+'-tool-js'} defaultValue={selectedBlock.properties.customJS||''} spellCheck="false" placeholder={"// Runs on the published website\nconsole.log('Hello from Apokolips');"} onBlur={e=>updateProp('customJS',e.target.value)}/><p>JavaScript runs on the exported/published website, not inside the visual editor preview. Use DOMContentLoaded for page setup.</p></>:<div className="tool-empty">Select an HTML element on the canvas to edit its JavaScript.</div>}
+        </div>}
+      </aside>
       <section className="builder-canvas-area"><div className="canvas-heading"><span>PAGE CANVAS</span><small>Drag blocks to reorder · Select to edit</small></div>
         <div className={'builder-canvas '+device} onDragOver={e=>e.preventDefault()} onDrop={e=>{const tag=e.dataTransfer.getData('builder-html-tag');const type=e.dataTransfer.getData('builder-component-type');if(tag&&HTML_TAGS.includes(tag)){e.preventDefault();addBlock('html',{tag});}else if(type&&TYPES.some(t=>t[0]===type)){e.preventDefault();addBlock(type);}}}>
           <div className="canvas-site-head"><b>{website.name}</b><span>{page?.title||'Home'}</span></div>
