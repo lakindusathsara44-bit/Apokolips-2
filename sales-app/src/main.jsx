@@ -27,7 +27,8 @@ const tableAttributes = object => {
   });
   return output;
 };
-\nfunction Block({ item }) {
+
+function Block({ item }) {
   const p = item.properties || {};
   switch (item.component_type) {
     case 'heading': {
