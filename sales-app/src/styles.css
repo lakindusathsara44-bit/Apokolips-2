@@ -6,3 +6,5 @@
 .sales-table thead th{background:#edf3f8;color:#24364a;font-weight:700}
 .sales-table tbody tr:nth-child(even){background:#f7f9fb}
 .sales-table tbody tr:hover{background:#edf5fc}
+
+.sales-page a{color:var(--page-link-color,inherit)}
