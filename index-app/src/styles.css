@@ -46,3 +46,13 @@
 @media(max-width:700px){.landing{width:calc(100% - 32px)}.site-header{align-items:flex-start;gap:12px}.header-actions{flex-wrap:wrap;justify-content:flex-end}.landing-hero{padding:70px 5px 65px}.service-grid,.process-list{grid-template-columns:1fr}.audience-grid{grid-template-columns:repeat(2,1fr)}.closing-cta{align-items:flex-start;flex-direction:column}.landing-footer{flex-wrap:wrap}}
 @media(max-width:420px){.header-actions{gap:6px}.dev-button,.theme-toggle{min-height:36px;padding:0 10px;font-size:10px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}}
+
+
+/* Clear, separate homepage route to the Subdomain Plans page. */
+.plans-nav-button,.plans-secondary-button{display:inline-flex;align-items:center;justify-content:center;gap:9px;min-height:40px;padding:0 15px;border:1px solid #9aafc3;border-radius:5px;background:transparent;color:#244665;text-decoration:none;font-size:11px;font-weight:700;transition:transform .18s ease,border-color .18s ease,background .18s ease}
+.plans-nav-button:hover,.plans-secondary-button:hover{transform:translateY(-2px);border-color:#315f89;background:#edf4fa}
+.hero-actions{display:flex;align-items:center;justify-content:center;gap:11px;flex-wrap:wrap}
+[data-theme=dark] .plans-nav-button,[data-theme=dark] .plans-secondary-button{border-color:#50677e;color:#dce8f4}
+[data-theme=dark] .plans-nav-button:hover,[data-theme=dark] .plans-secondary-button:hover{background:#122033;border-color:#8ab7e2}
+@media(max-width:700px){.header-actions{max-width:75%}.plans-nav-button{min-height:36px;padding:0 10px;font-size:10px}}
+@media(max-width:420px){.header-actions{max-width:78%}.plans-nav-button{font-size:9px;padding:0 8px}}
