@@ -82,11 +82,11 @@ jobs:
           test -s assets/sales/sales.js
           test -s assets/sales/sales.css
           test -s plans.html
-          grep -q 'https://www.apokolips.xyz/' plans.html
+          grep -q 'https://www.sales.apokolips.xyz/dev.html' plans.html
           test ! -d plans-app
           test ! -d assets/plans
           find assets/index-app -type f -size +0c | grep -q .
-          echo "Verified Index, Dev and Sales React bundles; retired Plans route redirects to the Apokolips homepage."
+          echo "Verified Index, Dev and Sales React bundles; retired Plans route redirects to the Sales Dev workspace."
 
       - name: Commit generated production files
         if: github.event_name == 'push'
