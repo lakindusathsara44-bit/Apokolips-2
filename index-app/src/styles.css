@@ -89,3 +89,42 @@
 @media(max-width:900px){.plan-grid-home{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.landing-hero{padding:62px 5px 50px}.access-actions{grid-template-columns:1fr}}
 @media(max-width:480px){.plan-grid-home{grid-template-columns:1fr}.home-plan-card{padding:19px}.access-option{padding:20px}}
+
+
+/* Refined motion system: subtle, accessible, and consistent with the official brand. */
+.landing{position:relative;isolation:isolate}
+.landing::before{content:"";position:fixed;z-index:-1;top:-230px;left:50%;width:min(850px,95vw);height:520px;transform:translateX(-50%);pointer-events:none;background:radial-gradient(ellipse at center,rgba(49,104,153,.10),transparent 68%);filter:blur(12px)}
+.site-header{transition:border-color .25s ease}
+.brand{transition:opacity .2s ease,transform .2s ease}
+.brand:hover{opacity:.82;transform:translateY(-1px)}
+.landing-hero{position:relative;isolation:isolate}
+.landing-hero::before,.landing-hero::after{content:"";position:absolute;z-index:-1;pointer-events:none;border:1px solid rgba(76,120,161,.13);border-radius:50%;animation:orbit-breathe 9s ease-in-out infinite}
+.landing-hero::before{width:230px;height:230px;top:15px;left:4%;transform:rotate(-18deg)}
+.landing-hero::after{width:145px;height:145px;right:8%;bottom:10px;animation-delay:-4.5s}
+.landing-hero .eyebrow{animation:fade-in .7s .08s both}
+.landing-hero .intro{animation:fade-in .75s .2s both}
+.section-heading{position:relative}
+.section-label{display:inline-flex;align-items:center;gap:9px}
+.section-label::before{content:"";display:inline-block;width:19px;height:1px;background:currentColor;opacity:.75}
+[data-reveal]{opacity:0;transform:translate3d(0,22px,0);transition:opacity .68s cubic-bezier(.2,.7,.2,1),transform .68s cubic-bezier(.2,.7,.2,1);transition-delay:var(--reveal-delay,0ms);will-change:opacity,transform}
+[data-reveal="down"]{transform:translate3d(0,-12px,0)}
+[data-reveal="hero"]{transform:translate3d(0,16px,0) scale(.99)}
+[data-reveal].is-visible{opacity:1;transform:translate3d(0,0,0) scale(1);will-change:auto}
+.service-card,.audience-item,.home-plan-card,.access-option{position:relative;overflow:hidden}
+.service-card::after,.home-plan-card::after,.access-option::after{content:"";position:absolute;top:0;left:0;width:100%;height:2px;transform:scaleX(0);transform-origin:left;background:linear-gradient(90deg,#315f89,#82afd8);transition:transform .35s ease}
+.service-card:hover::after,.home-plan-card:hover::after,.access-option:hover::after{transform:scaleX(1)}
+.audience-item{transition:transform .22s ease,border-color .22s ease,background .22s ease}
+.audience-item:hover{transform:translateY(-3px);border-color:#9bb3ca;background:#fafdff}
+.theme-toggle,.dev-button,.plans-button,.plan-link{transition:color .2s ease,background .2s ease,border-color .2s ease,box-shadow .2s ease,transform .2s ease}
+.dev-button:hover,.plans-button:hover{box-shadow:0 7px 18px rgba(24,63,104,.16)}
+.plan-link span,.dev-button span,.plans-button span{transition:transform .2s ease}
+.plan-link:hover span,.dev-button:hover span,.plans-button:hover span{transform:translate(2px,-2px)}
+.landing-footer{transition:color .25s ease}
+@keyframes fade-in{from{opacity:0}to{opacity:1}}
+@keyframes orbit-breathe{0%,100%{opacity:.35;scale:.96}50%{opacity:.8;scale:1.04}}
+[data-theme=dark] .landing::before{background:radial-gradient(ellipse at center,rgba(39,101,159,.19),transparent 68%)}
+[data-theme=dark] .landing-hero::before,[data-theme=dark] .landing-hero::after{border-color:rgba(119,169,211,.18)}
+[data-theme=dark] .audience-item:hover{background:#101a24;border-color:#6386a8}
+[data-theme=dark] .service-card:hover,[data-theme=dark] .home-plan-card:hover,[data-theme=dark] .access-option:hover{box-shadow:0 10px 26px rgba(0,0,0,.24)}
+@media(max-width:700px){.landing-hero::before{width:150px;height:150px;left:-3%;top:10px}.landing-hero::after{width:100px;height:100px;right:0;bottom:0}}
+@media(prefers-reduced-motion:reduce){[data-reveal],.landing-hero .eyebrow,.landing-hero .intro{opacity:1!important;transform:none!important;animation:none!important;transition:none!important;will-change:auto!important}.landing-hero::before,.landing-hero::after{animation:none!important}.service-card,.audience-item,.home-plan-card,.access-option,.brand,.theme-toggle,.dev-button,.plans-button,.plan-link{transition:none!important}}
