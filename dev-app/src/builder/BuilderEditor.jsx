@@ -225,6 +225,7 @@ export default function BuilderEditor({website,user,onBack}) {
   const [showMediaLibrary,setShowMediaLibrary]=useState(false);
   const dragId=useRef(null);
   const resizeSession=useRef(null);
+  const canvasRef=useRef(null);
 
   const startResize=(id,event,rect)=>{
     event.preventDefault();
@@ -277,8 +278,9 @@ export default function BuilderEditor({website,user,onBack}) {
   const record=(next)=>{
     setHistory(h=>[...h.slice(-39),clone(blocks)]);setFuture([]);setBlocks(next);setDirty(true);setMessage('Unsaved changes');
   };
-  const addBlock=(type,overrides={})=>{
-    const item={id:makeLocalId(),page_id:pageId,component_type:type,properties:{...clone(defaults[type]),...overrides},sort_order:blocks.length};
+  const addBlock=(type,overrides={},position=null)=>{
+    const placement=position?{_x:Math.max(0,Math.round(position.x)),_y:Math.max(0,Math.round(position.y))}:{};
+    const item={id:makeLocalId(),page_id:pageId,component_type:type,properties:{...clone(defaults[type]),...overrides,...placement},sort_order:blocks.length};
     record([...blocks,item]);setSelected(item.id);setTab('properties');
   };
   const updateProp=(key,value)=>{
@@ -517,9 +519,9 @@ const exportWebsiteZip=async()=>{
         </div>}
       </aside>
       <section className="builder-canvas-area"><div className="canvas-heading"><span>PAGE CANVAS</span><small>Drag blocks to reorder · Select to edit</small></div>
-        <div className={'builder-canvas '+device} style={pageBackgroundStyle(pageSettings)} onDragOver={e=>e.preventDefault()} onDrop={e=>{const tag=e.dataTransfer.getData('builder-html-tag');const type=e.dataTransfer.getData('builder-component-type');if(tag&&HTML_TAGS.includes(tag)){e.preventDefault();addBlock('html',{tag});}else if(type&&TYPES.some(t=>t[0]===type)){e.preventDefault();addBlock(type);}}}>
+        <div ref={canvasRef} className={'builder-canvas '+device} style={{...pageBackgroundStyle(pageSettings),minHeight:Math.max(600,...blocks.map(b=>Number.isFinite(Number(b.properties?._y))?Number(b.properties._y)+Math.max(40,Number(b.properties?._height)||120)+80:0))}} onDragOver={e=>e.preventDefault()} onDrop={e=>{const tag=e.dataTransfer.getData('builder-html-tag');const type=e.dataTransfer.getData('builder-component-type');const rect=canvasRef.current?.getBoundingClientRect();const position=rect?{x:e.clientX-rect.left-canvasRef.current.clientLeft,y:e.clientY-rect.top-canvasRef.current.clientTop+canvasRef.current.scrollTop}:null;if(tag&&HTML_TAGS.includes(tag)){e.preventDefault();addBlock('html',{tag},position);}else if(type&&TYPES.some(t=>t[0]===type)){e.preventDefault();addBlock(type,{},position);}}}>
           <div className="canvas-site-head"><b>{website.name}</b><span>{page?.title||'Home'}</span></div>
-          {blocks.length?blocks.map((b)=><div key={b.id} draggable onDragStart={()=>dragStart(b.id)} onDragOver={e=>e.preventDefault()} onDrop={e=>dropOn(b.id,e)}>{renderBlock(b,b.id===selected,setSelected,false,startResize)}<div className="canvas-reorder"><button onClick={()=>move(b.id,-1)}>↑</button><button onClick={()=>move(b.id,1)}>↓</button></div></div>):<div className="canvas-empty"><b>Start building this page</b><p>Choose an element from the left panel to add it to your canvas.</p></div>}
+          {blocks.length?blocks.map((b)=><div key={b.id} draggable onDragStart={()=>dragStart(b.id)} onDragOver={e=>e.preventDefault()} onDrop={e=>dropOn(b.id,e)} style={b.properties?._x!==undefined&&b.properties?._y!==undefined?{position:'absolute',left:Math.max(0,Number(b.properties._x)||0),top:Math.max(0,Number(b.properties._y)||0),width:b.properties._width?Math.max(80,Number(b.properties._width))+'px':'auto',height:b.properties._height?Math.max(40,Number(b.properties._height))+'px':'auto',zIndex:b.id===selected?2:1}:undefined}>{renderBlock(b,b.id===selected,setSelected,false,startResize)}<div className="canvas-reorder"><button onClick={()=>move(b.id,-1)}>↑</button><button onClick={()=>move(b.id,1)}>↓</button></div></div>):<div className="canvas-empty"><b>Start building this page</b><p>Choose an element from the left panel to add it to your canvas.</p></div>}
           <div className="canvas-end">End of page</div>
         </div>
       </section>
