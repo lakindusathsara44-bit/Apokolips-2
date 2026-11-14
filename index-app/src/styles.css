@@ -101,7 +101,6 @@
 .landing-hero::before,.landing-hero::after{content:"";position:absolute;z-index:-1;pointer-events:none;border:1px solid rgba(76,120,161,.13);border-radius:50%;animation:orbit-breathe 9s ease-in-out infinite}
 .landing-hero::before{width:230px;height:230px;top:15px;left:4%;transform:rotate(-18deg)}
 .landing-hero::after{width:145px;height:145px;right:8%;bottom:10px;animation-delay:-4.5s}
-.landing-hero h1{animation:title-settle .85s cubic-bezier(.2,.75,.25,1) both}
 .landing-hero .eyebrow{animation:fade-in .7s .08s both}
 .landing-hero .intro{animation:fade-in .75s .2s both}
 .section-heading{position:relative}
@@ -121,7 +120,6 @@
 .plan-link span,.dev-button span,.plans-button span{transition:transform .2s ease}
 .plan-link:hover span,.dev-button:hover span,.plans-button:hover span{transform:translate(2px,-2px)}
 .landing-footer{transition:color .25s ease}
-@keyframes title-settle{from{opacity:0;transform:translateY(17px);letter-spacing:-1px}to{opacity:1;transform:translateY(0);letter-spacing:-2px}}
 @keyframes fade-in{from{opacity:0}to{opacity:1}}
 @keyframes orbit-breathe{0%,100%{opacity:.35;scale:.96}50%{opacity:.8;scale:1.04}}
 [data-theme=dark] .landing::before{background:radial-gradient(ellipse at center,rgba(39,101,159,.19),transparent 68%)}
@@ -129,4 +127,4 @@
 [data-theme=dark] .audience-item:hover{background:#101a24;border-color:#6386a8}
 [data-theme=dark] .service-card:hover,[data-theme=dark] .home-plan-card:hover,[data-theme=dark] .access-option:hover{box-shadow:0 10px 26px rgba(0,0,0,.24)}
 @media(max-width:700px){.landing-hero::before{width:150px;height:150px;left:-3%;top:10px}.landing-hero::after{width:100px;height:100px;right:0;bottom:0}}
-@media(prefers-reduced-motion:reduce){[data-reveal],.landing-hero h1,.landing-hero .eyebrow,.landing-hero .intro{opacity:1!important;transform:none!important;animation:none!important;transition:none!important;will-change:auto!important}.landing-hero::before,.landing-hero::after{animation:none!important}.service-card,.audience-item,.home-plan-card,.access-option,.brand,.theme-toggle,.dev-button,.plans-button,.plan-link{transition:none!important}}
+@media(prefers-reduced-motion:reduce){[data-reveal],.landing-hero .eyebrow,.landing-hero .intro{opacity:1!important;transform:none!important;animation:none!important;transition:none!important;will-change:auto!important}.landing-hero::before,.landing-hero::after{animation:none!important}.service-card,.audience-item,.home-plan-card,.access-option,.brand,.theme-toggle,.dev-button,.plans-button,.plan-link{transition:none!important}}
