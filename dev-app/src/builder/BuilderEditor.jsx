@@ -23,6 +23,7 @@ const defaults = {
   html:{tag:'div',content:'Custom HTML element',attributes:'{}',styles:'{}',customCSS:'',customJS:''}
 };
 const clone = value => JSON.parse(JSON.stringify(value));
+const parseObject = value => { try { const parsed=JSON.parse(value||"{}"); return parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?parsed:{}; } catch { return {}; } };
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const makeExportMarkup = item => {
   const p=item.properties||{};
@@ -313,8 +314,8 @@ const exportWebsiteZip=async()=>{
           {selectedBlock?.component_type==='html'&&<div className="html-selected-note">Selected: <b>&lt;{selectedBlock.properties?.tag||'div'}&gt;</b>. Edit its attributes in Properties.</div>}
         </div>}
         {builderPanel==='css'&&<div className="builder-tool-content code-tool-content">
-          <div className="code-panel-heading">CUSTOM CSS <span>For selected HTML element</span></div>
-          {selectedBlock?.component_type==='html'?<><textarea aria-label="Custom CSS" key={selectedBlock.id+'-tool-css'} defaultValue={selectedBlock.properties.customCSS||''} spellCheck="false" placeholder={"/* CSS for this element */\ncolor: #172033;\npadding: 16px;"} onBlur={e=>updateProp('customCSS',e.target.value)}/><p>CSS is included in the exported website. Preview updates after saving the field.</p></>:<div className="tool-empty">Select an HTML element on the canvas to edit its CSS.</div>}
+          <div className="code-panel-heading">CSS EDITOR <span>Inline styles + custom stylesheet</span></div>
+          {selectedBlock?.component_type==='html'?<><textarea aria-label="Custom CSS" key={selectedBlock.id+'-tool-css'} defaultValue={selectedBlock.properties.customCSS||''} spellCheck="false" placeholder={"/* CSS for this element */\ncolor: #172033;\npadding: 16px;"} onBlur={e=>updateProp('customCSS',e.target.value)}/><p>Custom CSS is included in the exported website and visual preview. Use complete CSS rules/selectors.</p></>:<div className="tool-empty">Select an HTML element on the canvas to edit its CSS.</div>}
         </div>}
         {builderPanel==='js'&&<div className="builder-tool-content code-tool-content">
           <div className="code-panel-heading">CUSTOM JAVASCRIPT <span>Exported as script.js</span></div>
