@@ -61,7 +61,7 @@ No service-role key or database password belongs in the frontend or Git reposito
 - Preserved 6 workspaces, 6 memberships, 3 websites, 5 pages, 39 page components and 3 website versions.
 - Consolidated all migrated workspace ownership and website creator references to `lakindusathsara65@gmail.com`.
 - Kept the destination GPA Calculator records and existing Auth accounts.
-- Enabled RLS and installed 18 Builder table policies plus 4 private Storage policies.
+- Enabled RLS and installed 22 Builder table policies plus 4 private Storage policies.
 - Created the private `builder-assets` bucket. No media objects were present in the source bucket.
 - The former Xcontent Builder data has not yet been deleted. It will be retained until the application change is reviewed, merged and live-verified.
 
