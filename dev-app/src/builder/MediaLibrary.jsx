@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 const BUCKET='apokolips-media';
 const MAX_FILE_SIZE=100*1024*1024;
-const ACCEPTED=new Set('jpg jpeg png webp gif avif mp4 webm ogv ogg mp3 m4a wav pdf doc docx txt csv xls xlsx ppt pptx zip'.split(' '));
+const ACCEPTED=new Set('jpg jpeg png webp gif avif mp4 webm ogv ogg mov avi mkv mp3 m4a wav flac aac pdf doc docx odt txt rtf csv xls xlsx ods ppt pptx zip'.split(' '));
 const formatSize=bytes=>bytes<1024*1024?(bytes/1024).toFixed(1)+' KB':(bytes/1024/1024).toFixed(1)+' MB';
 const safeName=name=>String(name||'upload').normalize('NFKD').replace(/[^a-zA-Z0-9._-]+/g,'-').replace(/^-+|-+$/g,'').slice(-110)||'upload';
 export default function MediaLibrary({websiteId,onSelect,onClose}){
@@ -48,7 +48,7 @@ export default function MediaLibrary({websiteId,onSelect,onClose}){
   return <div className="media-modal-backdrop" role="presentation" onMouseDown={event=>{if(event.target===event.currentTarget)onClose();}}>
     <section className="media-modal" role="dialog" aria-modal="true" aria-labelledby="media-library-title">
       <header className="media-modal-header"><div><span>APOKOLIPS BUILDER</span><h2 id="media-library-title">Media library</h2><p>Upload and reuse files for this website.</p></div><button type="button" onClick={onClose} aria-label="Close media library">×</button></header>
-      <div className="media-upload-row"><label className="media-upload-button">＋ Upload files<input type="file" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.avif,.mp4,.webm,.ogv,.ogg,.mp3,.m4a,.wav,.pdf,.doc,.docx,.txt,.csv,.xls,.xlsx,.ppt,.pptx,.zip" onChange={upload} disabled={uploading}/></label><small>Images · Video · Audio · Documents · ZIP · Max 100 MB per file</small></div>
+      <div className="media-upload-row"><label className="media-upload-button">＋ Upload files<input type="file" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.avif,.mp4,.webm,.ogv,.ogg,.mov,.avi,.mkv,.mp3,.m4a,.wav,.flac,.aac,.pdf,.doc,.docx,.odt,.txt,.rtf,.csv,.xls,.xlsx,.ods,.ppt,.pptx,.zip" onChange={upload} disabled={uploading}/></label><small>Images · Video · Audio · Documents · ZIP · Max 100 MB per file</small></div>
       {progress&&<p className="media-progress" role="status">{progress}</p>}{error&&<p className="media-error" role="alert">{error}</p>}
       <div className="media-filter-row"><input aria-label="Search media" value={search} onChange={event=>setSearch(event.target.value)} placeholder="Search files…"/><div>{['all','images','video','audio','documents'].map(value=><button type="button" key={value} className={filter===value?'active':''} onClick={()=>setFilter(value)}>{value==='all'?'All':value[0].toUpperCase()+value.slice(1)}</button>)}</div></div>
       <div className="media-grid">{loading?<p className="media-empty">Loading media…</p>:filtered.length?filtered.map(item=><article className="media-item" key={item.path}>
