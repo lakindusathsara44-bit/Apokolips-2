@@ -134,3 +134,5 @@
 .css-json-label textarea{min-height:105px;font:10px/1.5 ui-monospace,Consolas,monospace}
 .css-code-label textarea{min-height:230px;font:11px/1.6 ui-monospace,Consolas,monospace}
 @media(max-width:620px){.quick-attributes{margin:8px 0}.quick-attributes label{font-size:10px}}
+
+.builder-page-settings{padding:13px}.builder-page-settings .property-heading{display:flex;flex-direction:column;gap:5px;margin-bottom:16px}.builder-page-settings .property-heading small{color:#8495a8;font-size:9px}.builder-page-settings label{display:flex;flex-direction:column;gap:7px;margin:13px 0;color:#b8c7d6;font-size:10px}.builder-page-settings input:not([type=color]),.builder-page-settings select{width:100%;min-width:0;min-height:34px;padding:7px 9px;border:1px solid #354456;border-radius:4px;background:#080d13;color:#e2ebf4;font:inherit;font-size:10px}.builder-page-settings input[type=color]{width:100%;height:38px;padding:3px;border:1px solid #354456;border-radius:4px;background:#080d13}.builder-page-settings .secondary-button{width:100%;margin-top:9px}
