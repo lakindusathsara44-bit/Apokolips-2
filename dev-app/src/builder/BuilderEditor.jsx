@@ -534,6 +534,7 @@ const exportWebsiteZip=async()=>{
         </div>:<div className="inspector-empty">Select an element on the canvas or add one from the left panel.</div>}
       </aside>
     </div>
-    {showMediaLibrary&&<MediaLibrary websiteId={website.id} onSelect={handleMediaSelect} onClose={()=>setShowMediaLibrary(false)}/>}\n    <footer className="builder-footer"><span>{message}</span><span>{publishStatus==='published'?'Published · Public website enabled':'Draft · Not visible to visitors'}</span></footer>
+    {showMediaLibrary&&<MediaLibrary websiteId={website.id} onSelect={handleMediaSelect} onClose={()=>setShowMediaLibrary(false)}/>}
+    <footer className="builder-footer"><span>{message}</span><span>{publishStatus==='published'?'Published · Public website enabled':'Draft · Not visible to visitors'}</span></footer>
   </div>;
 }
