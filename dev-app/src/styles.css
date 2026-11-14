@@ -122,3 +122,15 @@
  .html-tag-grid{grid-template-columns:repeat(3,minmax(0,1fr));max-height:240px}
  .code-tool-content textarea{min-height:180px}
 }
+
+.quick-attributes{margin:12px 0;padding:10px;border:1px solid #2d4052;border-radius:5px;background:#0b131c}
+.quick-attributes>b{display:block;margin-bottom:8px;color:#9fc7e8;font-size:9px;letter-spacing:.6px}
+.quick-attributes label{display:block;margin:7px 0;color:#91a5b8;font-size:9px}
+.quick-attributes input:not([type=checkbox]){display:block;width:100%;box-sizing:border-box;margin-top:5px;padding:7px;border:1px solid #34495d;border-radius:4px;background:#070c12;color:#dce8f2;font:10px ui-monospace,Consolas,monospace}
+.quick-attributes .attribute-check{display:flex;align-items:center;gap:7px}
+.quick-attributes .attribute-check input{accent-color:#478bc2}
+.quick-attributes p{color:#8196a9;font-size:9px;line-height:1.5}
+.css-json-label,.css-code-label{display:block;margin:10px 0;color:#a8c2d8;font-size:9px;font-weight:700}
+.css-json-label textarea{min-height:105px;font:10px/1.5 ui-monospace,Consolas,monospace}
+.css-code-label textarea{min-height:230px;font:11px/1.6 ui-monospace,Consolas,monospace}
+@media(max-width:620px){.quick-attributes{margin:8px 0}.quick-attributes label{font-size:10px}}
