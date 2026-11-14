@@ -49,7 +49,7 @@ function App() {
         </button>
       </header>
 
-      <section className="landing-hero" data-reveal="hero" aria-labelledby="landing-title">
+      <section className="landing-hero" aria-labelledby="landing-title">
         <p className="eyebrow">SALES.APOKOLIPS.XYZ · WEBSITE PLATFORM</p>
         <h1 id="landing-title">Your ideas deserve<br /><span>a place online.</span></h1>
         <p className="intro">Apokolips is a website-building workspace where you can create, design, manage, and publish websites for your projects, services, business, or community.</p>
