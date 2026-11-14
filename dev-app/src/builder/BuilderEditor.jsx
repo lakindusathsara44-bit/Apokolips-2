@@ -60,6 +60,19 @@ const createZipBlob = files => {
 };
 const makeLocalId = () => 'local-' + Math.random().toString(36).slice(2,11);
 
+const pageBackgroundStyle = settings => {
+  const image=String(settings?.backgroundImage||'').trim();
+  const safeImage=/^https:\/\//i.test(image)?image.replace(/["\\\n\r]/g,''):'';
+  return {
+    backgroundColor:/^#[0-9a-f]{6}$/i.test(String(settings?.backgroundColor||''))?settings.backgroundColor:'#ffffff',
+    backgroundImage:safeImage?('url("'+safeImage+'")'):'none',
+    backgroundSize:['cover','contain','auto'].includes(settings?.backgroundSize)?settings.backgroundSize:'cover',
+    backgroundPosition:['center center','top center','bottom center','left center','right center','left top','right top','left bottom','right bottom'].includes(settings?.backgroundPosition)?settings.backgroundPosition:'center center',
+    backgroundRepeat:['no-repeat','repeat','repeat-x','repeat-y'].includes(settings?.backgroundRepeat)?settings.backgroundRepeat:'no-repeat',
+    backgroundAttachment:['scroll','fixed'].includes(settings?.backgroundAttachment)?settings.backgroundAttachment:'scroll'
+  };
+};
+
 function renderBlock(item, selected, onSelect, preview, onResizeStart) {
   const p=item.properties||{};
   const common={
@@ -92,6 +105,7 @@ export default function BuilderEditor({website,user,onBack}) {
   const [pages,setPages]=useState([]);
   const [pageId,setPageId]=useState('');
   const [blocks,setBlocks]=useState([]);
+  const [pageSettings,setPageSettings]=useState({});
   const [selected,setSelected]=useState('');
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
@@ -146,10 +160,10 @@ export default function BuilderEditor({website,user,onBack}) {
   const load = useCallback(async()=>{
     setLoading(true);setError('');
     try{
-      const {data:pageRows,error:pageError}=await supabase.from('builder_website_pages').select('id,title,slug,page_order,is_homepage').eq('website_id',website.id).order('page_order');
+      const {data:pageRows,error:pageError}=await supabase.from('builder_website_pages').select('id,title,slug,page_order,is_homepage,settings').eq('website_id',website.id).order('page_order');
       if(pageError)throw pageError;
       const rows=pageRows||[];setPages(rows);
-      const active=rows.find(x=>x.id===pageId)||rows[0];setPageId(active?.id||'');
+      const active=rows.find(x=>x.id===pageId)||rows[0];setPageId(active?.id||'');setPageSettings(active?.settings||{});
       if(active){
         const {data:items,error:itemError}=await supabase.from('builder_page_components').select('id,page_id,component_type,properties,sort_order').eq('page_id',active.id).order('sort_order');
         if(itemError)throw itemError;
@@ -173,6 +187,11 @@ export default function BuilderEditor({website,user,onBack}) {
     if(!selectedBlock)return;
     record(blocks.map(b=>b.id===selected?{...b,properties:{...b.properties,[key]:value}}:b));
   };
+  const updatePageSetting=(key,value)=>{
+    setPageSettings(current=>({...current,[key]:value}));
+    setPages(current=>current.map(item=>item.id===pageId?{...item,settings:{...(item.settings||{}),[key]:value}}:item));
+    setDirty(true);setMessage('Unsaved changes');
+  };
   const removeSelected=()=>{
     if(!selectedBlock)return;
     record(blocks.filter(b=>b.id!==selected));setSelected('');
@@ -187,9 +206,12 @@ export default function BuilderEditor({website,user,onBack}) {
   const redo=()=>{if(!future.length)return;setHistory(h=>[...h,clone(blocks)]);setBlocks(future[0]);setFuture(f=>f.slice(1));setDirty(true);setMessage('Unsaved changes');};
 
   const save=useCallback(async()=>{
-    if(!dirty||savingRef.current||!pageId)return;
+    if(!dirty)return true;
+    if(savingRef.current||!pageId)return false;
     savingRef.current=true;setSaving(true);setMessage('Saving…');setError('');
     try{
+      const {error:settingsError}=await supabase.from('builder_website_pages').update({settings:pageSettings}).eq('id',pageId);
+      if(settingsError)throw settingsError;
       const {data:existing,error:readError}=await supabase.from('builder_page_components').select('id').eq('page_id',pageId);
       if(readError)throw readError;
       const localIds=blocks.filter(b=>!b.id.startsWith('local-')).map(b=>b.id);
@@ -206,38 +228,51 @@ export default function BuilderEditor({website,user,onBack}) {
       if(confirmError)throw confirmError;
       setBlocks(confirmed||[]);setSelected(current=>(confirmed||[]).some(x=>x.id===current)?current:confirmed?.[0]?.id||'');
       setDirty(false);setMessage('All changes saved');
-    }catch(e){setError(e.message||'Save failed. Your changes are still in this editor.');setMessage('Save failed');}
+      return true;
+    }catch(e){setError([e.message,e.details,e.hint].filter(Boolean).join(' · ')||'Save failed. Your changes are still in this editor.');setMessage('Save failed');return false;}
     finally{savingRef.current=false;setSaving(false);}
-  },[dirty,pageId,blocks]);
+  },[dirty,pageId,blocks,pageSettings]);
 
   useEffect(()=>{if(!dirty||loading)return;const timer=setTimeout(()=>void save(),1000);return()=>clearTimeout(timer);},[dirty,loading,save]);
   useEffect(()=>{const handler=e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();void save();}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undo();}};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);});
 
   async function togglePublish(){
-    if(dirty||saving){setPublishNotice('Save all changes before publishing.');return;}
+    if(publishing)return;
+    if(saving){setPublishNotice('Please wait until the current save finishes.');return;}
+    if(dirty){
+      const saved=await save();
+      if(!saved){setPublishNotice('Publishing stopped because the latest changes could not be saved. Check the save error above.');return;}
+    }
     setPublishing(true);setPublishNotice('');
+    const nextStatus=publishStatus==='published'?'draft':'published';
     try{
-      const action=publishStatus==='published'?'unpublish_builder_website':'publish_builder_website';
-      const {data,error}=await supabase.rpc(action,{p_website_id:website.id});
+      const action=nextStatus==='published'?'publish_builder_website':'unpublish_builder_website';
+      const {error}=await supabase.rpc(action,{p_website_id:website.id});
       if(error)throw error;
-      setPublishStatus(publishStatus==='published'?'draft':'published');
-      setPublishNotice(publishStatus==='published'?'Website unpublished.':'Website published successfully.');
-    }catch(error){setPublishNotice(error.message||'Could not update publishing status.');}
-    finally{setPublishing(false);}
+      const {data:verified,error:verifyError}=await supabase.from('builder_websites').select('status').eq('id',website.id).single();
+      if(verifyError)throw verifyError;
+      if(verified.status!==nextStatus)throw new Error('The database did not confirm the requested publishing status.');
+      setPublishStatus(verified.status);
+      setPublishNotice(nextStatus==='published'?'Website published successfully.':'Website unpublished.');
+    }catch(error){
+      setPublishNotice([error.message,error.details,error.hint].filter(Boolean).join(' · ')||'Could not update publishing status.');
+    }finally{setPublishing(false);}
   }
 
   async function addPage(e){
     e.preventDefault();const title=pageName.trim();const slug=title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     if(!title||!slug)return;
-    const {data,error:e2}=await supabase.from('builder_website_pages').insert({website_id:website.id,title,slug,page_order:pages.length,is_homepage:false}).select('id,title,slug,page_order,is_homepage').single();
+    const {data,error:e2}=await supabase.from('builder_website_pages').insert({website_id:website.id,title,slug,page_order:pages.length,is_homepage:false}).select('id,title,slug,page_order,is_homepage,settings').single();
     if(e2){setError(e2.message);return;}
-    setPages(p=>[...p,data]);setPageId(data.id);setBlocks([]);setSelected('');setDirty(false);setPageName('');setShowPageForm(false);
+    setPages(p=>[...p,data]);setPageId(data.id);setPageSettings(data.settings||{});setBlocks([]);setSelected('');setDirty(false);setPageName('');setShowPageForm(false);
   }
   async function switchPage(id){
     if(dirty){await save();}
     const {data,error:e}=await supabase.from('builder_page_components').select('id,page_id,component_type,properties,sort_order').eq('page_id',id).order('sort_order');
     if(e){setError(e.message);return;}
-    setPageId(id);setBlocks(data||[]);setSelected(data?.[0]?.id||'');setDirty(false);setHistory([]);setFuture([]);
+    const {data:pageRow,error:pageError}=await supabase.from('builder_website_pages').select('settings').eq('id',id).single();
+    if(pageError){setError(pageError.message);return;}
+    setPageId(id);setPageSettings(pageRow?.settings||{});setBlocks(data||[]);setSelected(data?.[0]?.id||'');setDirty(false);setHistory([]);setFuture([]);
   }
   function dragStart(id){dragId.current=id;}
   function dropOn(id,event){
@@ -287,7 +322,7 @@ const exportWebsiteZip=async()=>{
     <header className="builder-topbar">
       <button className="builder-back" onClick={onBack}>← Dashboard</button>
       <div className="builder-project-name"><b>{website.name}</b><span>www.sales.apokolips.xyz/{website.slug}</span></div>
-      <div className="builder-top-actions"><span className={dirty?'save-status pending':'save-status'}>{saving?'Saving…':dirty?'Unsaved':'Saved'}</span><button onClick={()=>void save()} disabled={!dirty||saving}>Save</button><button onClick={()=>void togglePublish()} disabled={publishing||dirty||saving}>{publishing?'Please wait…':publishStatus==='published'?'Unpublish':'Publish'}</button><button onClick={exportJson}>Export layout</button><button onClick={exportWebsiteZip} disabled={!blocks.length}>Download ZIP</button></div>
+      <div className="builder-top-actions"><span className={dirty?'save-status pending':'save-status'}>{saving?'Saving…':dirty?'Unsaved':'Saved'}</span><button onClick={()=>void save()} disabled={!dirty||saving}>Save</button><button onClick={()=>void togglePublish()} disabled={publishing||saving}>{publishing?'Please wait…':publishStatus==='published'?'Unpublish':dirty?'Save & Publish':'Publish'}</button><button onClick={exportJson}>Export layout</button><button onClick={exportWebsiteZip} disabled={!blocks.length}>Download ZIP</button></div>
     </header>
     <div className="builder-toolbar">
       <div className="builder-page-select"><label>PAGE</label><select value={pageId} onChange={e=>void switchPage(e.target.value)}>{pages.map(p=><option key={p.id} value={p.id}>{p.title}{p.is_homepage?' · Home':''}</option>)}</select><button onClick={()=>setShowPageForm(v=>!v)}>＋ Page</button></div>
@@ -338,14 +373,14 @@ const exportWebsiteZip=async()=>{
         </div>}
       </aside>
       <section className="builder-canvas-area"><div className="canvas-heading"><span>PAGE CANVAS</span><small>Drag blocks to reorder · Select to edit</small></div>
-        <div className={'builder-canvas '+device} onDragOver={e=>e.preventDefault()} onDrop={e=>{const tag=e.dataTransfer.getData('builder-html-tag');const type=e.dataTransfer.getData('builder-component-type');if(tag&&HTML_TAGS.includes(tag)){e.preventDefault();addBlock('html',{tag});}else if(type&&TYPES.some(t=>t[0]===type)){e.preventDefault();addBlock(type);}}}>
+        <div className={'builder-canvas '+device} style={pageBackgroundStyle(pageSettings)} onDragOver={e=>e.preventDefault()} onDrop={e=>{const tag=e.dataTransfer.getData('builder-html-tag');const type=e.dataTransfer.getData('builder-component-type');if(tag&&HTML_TAGS.includes(tag)){e.preventDefault();addBlock('html',{tag});}else if(type&&TYPES.some(t=>t[0]===type)){e.preventDefault();addBlock(type);}}}>
           <div className="canvas-site-head"><b>{website.name}</b><span>{page?.title||'Home'}</span></div>
           {blocks.length?blocks.map((b)=><div key={b.id} draggable onDragStart={()=>dragStart(b.id)} onDragOver={e=>e.preventDefault()} onDrop={e=>dropOn(b.id,e)}>{renderBlock(b,b.id===selected,setSelected,false,startResize)}<div className="canvas-reorder"><button onClick={()=>move(b.id,-1)}>↑</button><button onClick={()=>move(b.id,1)}>↓</button></div></div>):<div className="canvas-empty"><b>Start building this page</b><p>Choose an element from the left panel to add it to your canvas.</p></div>}
           <div className="canvas-end">End of page</div>
         </div>
       </section>
-      <aside className="builder-inspector"><div className="inspector-tabs"><button className={tab==='properties'?'active':''} onClick={()=>setTab('properties')}>Properties</button><button className={tab==='layers'?'active':''} onClick={()=>setTab('layers')}>Layers</button></div>
-        {tab==='layers'?<div className="layer-list">{blocks.map((b,i)=><button key={b.id} className={selected===b.id?'active':''} onClick={()=>setSelected(b.id)}><span>{TYPES.find(t=>t[0]===b.component_type)?.[1]}</span><small>{i+1}</small></button>)}</div>:selectedBlock?<div className="property-form"><div className="property-heading"><b>{TYPES.find(t=>t[0]===selectedBlock.component_type)?.[1]}</b><button onClick={removeSelected}>Delete</button></div>
+      <aside className="builder-inspector"><div className="inspector-tabs"><button className={tab==='properties'?'active':''} onClick={()=>setTab('properties')}>Properties</button><button className={tab==='layers'?'active':''} onClick={()=>setTab('layers')}>Layers</button><button className={tab==='page'?'active':''} onClick={()=>setTab('page')}>Page</button></div>
+        {tab==='page'?<div className="builder-page-settings"><div className="property-heading"><b>PAGE BACKGROUND</b><small>Saved with this page</small></div><label>Background colour<input type="color" value={pageSettings.backgroundColor||'#ffffff'} onChange={e=>updatePageSetting('backgroundColor',e.target.value)}/></label><label>Background image URL<input type="url" value={pageSettings.backgroundImage||''} placeholder="https://example.com/background.jpg" onChange={e=>updatePageSetting('backgroundImage',e.target.value)}/></label><label>Image size<select value={pageSettings.backgroundSize||'cover'} onChange={e=>updatePageSetting('backgroundSize',e.target.value)}><option value="cover">Cover</option><option value="contain">Contain</option><option value="auto">Original size</option></select></label><label>Image position<select value={pageSettings.backgroundPosition||'center center'} onChange={e=>updatePageSetting('backgroundPosition',e.target.value)}>{['center center','top center','bottom center','left center','right center','left top','right top','left bottom','right bottom'].map(value=><option key={value} value={value}>{value}</option>)}</select></label><label>Image repeat<select value={pageSettings.backgroundRepeat||'no-repeat'} onChange={e=>updatePageSetting('backgroundRepeat',e.target.value)}><option value="no-repeat">No repeat</option><option value="repeat">Repeat</option><option value="repeat-x">Repeat horizontally</option><option value="repeat-y">Repeat vertically</option></select></label><label>Background attachment<select value={pageSettings.backgroundAttachment||'scroll'} onChange={e=>updatePageSetting('backgroundAttachment',e.target.value)}><option value="scroll">Scroll</option><option value="fixed">Fixed</option></select></label><button className="secondary-button" onClick={()=>{setPageSettings({});setPages(current=>current.map(item=>item.id===pageId?{...item,settings:{}}:item));setDirty(true);setMessage('Unsaved changes');}}>Reset background</button></div>:tab==='layers'?<div className="layer-list">{blocks.map((b,i)=><button key={b.id} className={selected===b.id?'active':''} onClick={()=>setSelected(b.id)}><span>{TYPES.find(t=>t[0]===b.component_type)?.[1]}</span><small>{i+1}</small></button>)}</div>:selectedBlock?<div className="property-form"><div className="property-heading"><b>{TYPES.find(t=>t[0]===selectedBlock.component_type)?.[1]}</b><button onClick={removeSelected}>Delete</button></div>
           <div className="dimension-controls"><b>SIZE</b><label>Width (px)<input type="number" min="80" value={selectedBlock.properties?._width??''} placeholder="Auto" onChange={e=>updateProp('_width',e.target.value===''?undefined:Math.max(80,Number(e.target.value)))}/></label><label>Height (px)<input type="number" min="40" value={selectedBlock.properties?._height??''} placeholder="Auto" onChange={e=>updateProp('_height',e.target.value===''?undefined:Math.max(40,Number(e.target.value)))}/></label><small>Drag the blue corner on the selected element to resize visually.</small></div>
           {Object.entries(selectedBlock.properties||{}).filter(([key])=>!['attributes','styles','rows','tableAttributes','headerAttributes','cellAttributes','customCSS','customJS','_width','_height'].includes(key)).map(([key,value])=><label key={key}>{key==='tag'?'HTML tag':key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase())}{key==='tag'?<select value={value} onChange={e=>updateProp(key,e.target.value)}>{HTML_TAGS.map(tag=><option key={tag} value={tag}>&lt;{tag}&gt;</option>)}</select>:typeof value==='number'?<input type="number" value={value} onChange={e=>updateProp(key,Number(e.target.value))}/>:key==='color'||key==='background'?<input type="color" value={/^#[0-9a-f]{6}$/i.test(value)?value:'#ffffff'} onChange={e=>updateProp(key,e.target.value)}/>:<textarea rows={key==='text'||key==='content'?4:2} value={String(value??'')} onChange={e=>updateProp(key,e.target.value)}/>}</label>)}
           {selectedBlock.component_type==='html'&&<div className="advanced-element-tools"><label>HTML attributes (JSON)<textarea key={selectedBlock.id+'-attrs'} defaultValue={selectedBlock.properties.attributes||'{}'} rows={5} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Attributes must be a JSON object.');updateProp('attributes',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>CSS styles (JSON)<textarea key={selectedBlock.id+'-styles'} defaultValue={selectedBlock.properties.styles||'{}'} rows={5} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Styles must be a JSON object.');updateProp('styles',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>Custom CSS<textarea key={selectedBlock.id+'-css'} defaultValue={selectedBlock.properties.customCSS||''} rows={5} onBlur={e=>updateProp('customCSS',e.target.value)}/></label><label>Custom JavaScript (exported to script.js)<textarea key={selectedBlock.id+'-js'} defaultValue={selectedBlock.properties.customJS||''} rows={7} onBlur={e=>updateProp('customJS',e.target.value)}/></label></div>}
