@@ -11,7 +11,23 @@ const safeSegment = value => {
   } catch { return ''; }
 };
 
-function Block({ item }) {
+
+const parseObject = value => {try{const parsed=typeof value==='string'?JSON.parse(value||'{}'):value;return parsed&&typeof parsed==='object'&&!Array.isArray(parsed)?parsed:{};}catch{return {};}};
+const tableHeaders = value => String(value||'Column 1, Column 2').split(',').map(x=>x.trim());
+const tableRows = value => {try{const rows=JSON.parse(value||'[]');return Array.isArray(rows)?rows.map(row=>Array.isArray(row)?row:[]):[];}catch{return [];}};
+const tableAttributes = object => {
+  const aliases={class:'className',for:'htmlFor',colspan:'colSpan',rowspan:'rowSpan',cellpadding:'cellPadding',cellspacing:'cellSpacing',tabindex:'tabIndex',readonly:'readOnly'};
+  const output={};
+  Object.entries(object||{}).forEach(([key,value])=>{
+    if(!/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(key)||/^on/i.test(key)||value===null||value===undefined||value===false)return;
+    if(key.toLowerCase()==='style'){
+      if(value&&typeof value==='object'&&!Array.isArray(value))output.style=value;
+      else if(typeof value==='string'){const styles={};value.split(';').forEach(part=>{const at=part.indexOf(':');if(at>0)styles[part.slice(0,at).trim().replace(/-([a-z])/g,(_,c)=>c.toUpperCase())]=part.slice(at+1).trim();});if(Object.keys(styles).length)output.style=styles;}
+    } else output[aliases[key.toLowerCase()]||key]=value===true?'':value;
+  });
+  return output;
+};
+\nfunction Block({ item }) {
   const p = item.properties || {};
   switch (item.component_type) {
     case 'heading': {
@@ -25,6 +41,17 @@ function Block({ item }) {
     case 'columns': return <section className="sales-columns"><div>{p.left || ''}</div><div>{p.right || ''}</div></section>;
     case 'card': return <article className="sales-card"><h2>{p.title || ''}</h2><p>{p.text || ''}</p></article>;
     case 'navbar': return <nav className="sales-nav"><strong>{p.brand || ' '}</strong><div>{String(p.links || '').split(',').map(x => x.trim()).filter(Boolean).map((x,i) => <a key={i} href={'#' + x.toLowerCase().replace(/[^a-z0-9]+/g,'-')}>{x}</a>)}</div></nav>;
+    case 'table': {
+      const headers=tableHeaders(p.headers),rows=tableRows(p.rows);
+      const tableProps=tableAttributes(parseObject(p.tableAttributes));
+      const headerProps=tableAttributes({scope:'col',...parseObject(p.headerAttributes)});
+      const cellProps=tableAttributes(parseObject(p.cellAttributes));
+      return <div className="sales-table-wrap"><table {...tableProps} className={'sales-table '+(tableProps.className||'')}>
+        {p.caption&&<caption>{p.caption}</caption>}
+        <thead><tr>{headers.map((header,index)=><th key={index} {...headerProps}>{header}</th>)}</tr></thead>
+        <tbody>{rows.map((row,rowIndex)=><tr key={rowIndex}>{headers.map((_,colIndex)=><td key={colIndex} {...cellProps}>{row[colIndex]??''}</td>)}</tr>)}</tbody>
+      </table></div>;
+    }
     case 'footer': return <footer className="sales-footer">{p.text || ''}</footer>;
     default: return null;
   }
