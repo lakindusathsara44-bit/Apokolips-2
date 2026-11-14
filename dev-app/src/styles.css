@@ -191,3 +191,60 @@
 .media-item-actions{display:flex;gap:5px;padding:0 9px 9px;align-items:center}.media-item-actions button,.media-item-actions a{font-size:9px;padding:6px 8px;border-radius:4px;border:1px solid #3a5875;background:#1d3d5b;color:#e5f0fb;text-decoration:none;cursor:pointer}.media-item-actions .media-delete{margin-left:auto;background:#291b20;border-color:#63414a;color:#ffc4ca}
 .media-empty{grid-column:1/-1;text-align:center;color:#9aadc0;padding:34px 10px;font-size:12px}.media-modal-footer{display:flex;justify-content:space-between;align-items:center;padding:12px 22px;border-top:1px solid #293b4e}
 @media(max-width:600px){.media-modal-backdrop{padding:7px}.media-modal{max-height:94vh}.media-modal-header{padding:15px}.media-filter-row{padding:0 14px 12px}.media-grid{padding:0 14px 14px;grid-template-columns:repeat(2,minmax(0,1fr))}.media-upload-row{padding:12px 14px}.media-item-actions{flex-wrap:wrap}.media-item-actions .media-delete{margin-left:0}}
+
+/* Keep the builder viewport fixed; each of its three work panels scrolls independently. */
+.builder-editor{
+  height:100vh;
+  height:100dvh;
+  min-height:0;
+  overflow:hidden;
+  display:flex;
+  flex-direction:column;
+}
+.builder-topbar,.builder-toolbar,.builder-page-form,.builder-error,.builder-publish-notice,.builder-footer{
+  flex:0 0 auto;
+}
+.builder-workspace{
+  flex:1 1 0;
+  min-height:0;
+  overflow:hidden;
+}
+.builder-palette,.builder-inspector,.builder-canvas-area{
+  min-height:0;
+  overflow-y:auto;
+  overscroll-behavior-y:contain;
+  scrollbar-gutter:stable;
+}
+.builder-palette,.builder-inspector{
+  overflow-x:hidden;
+}
+.builder-canvas-area{
+  overflow-x:hidden;
+  -webkit-overflow-scrolling:touch;
+}
+.builder-canvas{
+  min-height:calc(100% - 1px);
+  height:auto;
+}
+@media(max-width:900px){
+  .builder-workspace{min-height:0}
+  .builder-inspector{min-height:220px}
+}
+@media(max-width:620px){
+  .builder-workspace{min-height:0;overflow:hidden}
+  .builder-palette{
+    display:block;
+    max-height:32%;
+    overflow-y:auto;
+    border-right:0;
+    border-bottom:1px solid #26313d;
+  }
+  .builder-inspector{
+    grid-column:auto;
+    min-height:0;
+    max-height:34%;
+    overflow-y:auto;
+    border-top:1px solid #26313d;
+  }
+  .builder-canvas-area{min-height:0;overflow-y:auto}
+}
