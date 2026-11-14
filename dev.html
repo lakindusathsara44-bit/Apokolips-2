@@ -3,7 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#050505" />
+    <meta name="theme-color" content="#f5f7fa" />
+<script>
+(() => {
+  const key = 'apokolips-theme';
+  const apply = value => { document.documentElement.dataset.theme = value === 'dark' ? 'dark' : 'light'; };
+  try { apply(localStorage.getItem(key) || 'light'); } catch { apply('light'); }
+  window.addEventListener('storage', event => {
+    if (event.key === key && (event.newValue === 'dark' || event.newValue === 'light')) apply(event.newValue);
+  });
+})();
+</script>
     <meta name="description" content="Apokolips Dev — website builder workspace." />
     <title>Dev | Apokolips</title>
     <link rel="icon" type="image/x-icon" href="./file_00000000a7ec820890154ca6ed49b608.ico" />
