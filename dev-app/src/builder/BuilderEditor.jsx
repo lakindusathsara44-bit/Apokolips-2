@@ -18,6 +18,38 @@ const defaults = {
   footer:{text:'© Your brand. All rights reserved.'}
 };
 const clone = value => JSON.parse(JSON.stringify(value));
+const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+const makeExportMarkup = item => {
+  const p=item.properties||{};
+  const style=[p._width?'width:'+Math.max(80,Number(p._width))+'px':'',p._height?'min-height:'+Math.max(40,Number(p._height))+'px':''].filter(Boolean).join(';');
+  const attr=style?' style="'+style+'"':'';
+  switch(item.component_type){
+    case 'heading': {const level=Math.min(3,Math.max(1,Number(p.level)||1));return '<section class="block"'+attr+'><h'+level+' style="text-align:'+escapeHtml(p.align||'left')+';color:'+escapeHtml(p.color||'#172033')+'">'+escapeHtml(p.text||'Your heading')+'</h'+level+'></section>';}
+    case 'text': return '<section class="block"'+attr+'><p style="text-align:'+escapeHtml(p.align||'left')+';color:'+escapeHtml(p.color||'#536174')+'">'+escapeHtml(p.text||'')+'</p></section>';
+    case 'button': return '<section class="block"'+attr+'><a class="button '+(p.variant==='secondary'?'secondary':'')+'" href="'+escapeHtml(p.href||'#')+'">'+escapeHtml(p.text||'Button')+'</a></section>';
+    case 'image': return '<section class="block"'+attr+'>'+(p.src?'<img class="image" src="'+escapeHtml(p.src)+'" alt="'+escapeHtml(p.alt||'')+'">':'<div class="image-placeholder">Image not configured</div>')+'</section>';
+    case 'container': return '<section class="block container"'+attr+' style="background:'+escapeHtml(p.background||'#f4f7fb')+';padding:'+Math.max(0,Number(p.padding)||24)+'px">'+escapeHtml(p.text||'')+'</section>';
+    case 'columns': return '<section class="block columns"'+attr+'><div>'+escapeHtml(p.left||'')+'</div><div>'+escapeHtml(p.right||'')+'</div></section>';
+    case 'card': return '<section class="block"'+attr+'><article class="card"><h3>'+escapeHtml(p.title||'Card title')+'</h3><p>'+escapeHtml(p.text||'')+'</p></article></section>';
+    case 'navbar': return '<header class="block navbar"'+attr+'><strong>'+escapeHtml(p.brand||'Brand')+'</strong><nav>'+(p.links||'Home, About, Contact').split(',').map(x=>x.trim()).filter(Boolean).map(x=>'<a href="#'+escapeHtml(x.toLowerCase().replace(/[^a-z0-9]+/g,'-'))+'">'+escapeHtml(x)+'</a>').join('')+'</nav></header>';
+    case 'footer': return '<footer class="block footer"'+attr+'>'+escapeHtml(p.text||'')+'</footer>';
+    default:return '';
+  }
+};
+const crc32 = bytes => {let crc=0xffffffff;for(const byte of bytes){crc^=byte;for(let k=0;k<8;k++)crc=(crc>>>1)^((crc&1)?0xedb88320:0);}return (crc^0xffffffff)>>>0;};
+const createZipBlob = files => {
+  const encoder=new TextEncoder(),local=[],central=[];let offset=0;
+  const u16=n=>[n&255,(n>>>8)&255],u32=n=>[n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255];
+  for(const file of files){const name=encoder.encode(file.name),data=encoder.encode(file.content),crc=crc32(data);
+    const lh=new Uint8Array([...u32(0x04034b50),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0),...name]);
+    local.push(lh,data);
+    const ch=new Uint8Array([...u32(0x02014b50),...u16(20),...u16(20),...u16(0x0800),...u16(0),...u16(0),...u16(0),...u32(crc),...u32(data.length),...u32(data.length),...u16(name.length),...u16(0),...u16(0),...u16(0),...u16(0),...u32(0),...u32(offset),...name]);
+    central.push(ch);offset+=lh.length+data.length;
+  }
+  const centralSize=central.reduce((n,x)=>n+x.length,0);
+  const end=new Uint8Array([...u32(0x06054b50),...u16(0),...u16(0),...u16(files.length),...u16(files.length),...u32(centralSize),...u32(offset),...u16(0)]);
+  return new Blob([...local,...central,end],{type:'application/zip'});
+};
 const makeLocalId = () => 'local-' + Math.random().toString(36).slice(2,11);
 
 function renderBlock(item, selected, onSelect, preview, onResizeStart) {
@@ -202,6 +234,17 @@ export default function BuilderEditor({website,user,onBack}) {
     const next=[...blocks];const [item]=next.splice(from,1);next.splice(to,0,item);record(next.map((b,i)=>({...b,sort_order:i})));dragId.current=null;
   }
   const exportJson=()=>{const blob=new Blob([JSON.stringify({website:website.name,page:page?.title,components:blocks.map(({component_type,properties,sort_order})=>({component_type,properties,sort_order}))},null,2)],{type:'application/json'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=(page?.slug||'page')+'-layout.json';a.click();URL.revokeObjectURL(url);};
+const exportWebsiteZip=()=>{
+    const title=page?.title||website.name||'Website';
+    const slug=(page?.slug||website.slug||'website').replace(/[^a-z0-9-]/gi,'-').toLowerCase();
+    const content=blocks.map(makeExportMarkup).join('\n');
+    const html='<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n<meta name="viewport" content="width=device-width, initial-scale=1">\n<title>'+escapeHtml(title)+'</title>\n<link rel="stylesheet" href="styles.css">\n</head>\n<body>\n<main class="site"><h1 class="site-title">'+escapeHtml(website.name||title)+'</h1>\n'+content+'\n</main>\n<script src="script.js" defer></script>\n</body>\n</html>';
+    const css='*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:#fff;color:#172033;font-family:Inter,Arial,sans-serif;line-height:1.65}.site{width:min(1100px,calc(100% - 40px));margin:0 auto;padding:32px 0 64px}.site-title{font-size:clamp(1.4rem,4vw,2rem);margin:0 0 28px;color:#0b1730}.block{margin:0 0 22px;max-width:100%;overflow-wrap:anywhere}.block h1,.block h2,.block h3{line-height:1.2;margin:0 0 12px}.block p{margin:0 0 12px}.button{display:inline-block;padding:12px 22px;border-radius:7px;background:#123d83;color:#fff;text-decoration:none;font-weight:700}.button.secondary{background:#eaf1fb;color:#123d83}.image{display:block;max-width:100%;height:auto;border-radius:10px}.image-placeholder{padding:30px;background:#f2f5f9;color:#596579;border-radius:8px}.container{border-radius:10px;color:#273449}.columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}.columns>div,.card{padding:22px;border:1px solid #e3e9f2;border-radius:10px}.card h3{margin:0 0 8px}.navbar{display:flex;align-items:center;justify-content:space-between;gap:18px;padding:16px 20px;border-bottom:1px solid #e5eaf1}.navbar nav{display:flex;flex-wrap:wrap;gap:16px}.navbar a{color:#24446f;text-decoration:none}.footer{margin-top:40px;padding:22px;background:#0b1730;color:#fff;border-radius:8px}@media(max-width:640px){.site{width:calc(100% - 28px);padding-top:20px}.columns{grid-template-columns:1fr}.navbar{align-items:flex-start;flex-direction:column}.navbar nav{gap:10px}}';
+    const js='// Apokolips Website Builder export\\ndocument.addEventListener("DOMContentLoaded",()=>{document.querySelectorAll("a[href^=\\"#\\"]").forEach(link=>link.addEventListener("click",event=>{const target=document.querySelector(link.getAttribute("href"));if(target){event.preventDefault();target.scrollIntoView({behavior:"smooth"});}}));});\\n';
+    const readme=title+'\\n\\nExported from Apokolips Website Builder.\\n\\nFiles included: index.html, styles.css, script.js.\\nOpen index.html in a browser or upload all files to your web host.\\n\\nImages use the source URLs configured in the builder; download them separately for a fully offline copy.\\n';
+    const blob=createZipBlob([{name:'index.html',content:html},{name:'styles.css',content:css},{name:'script.js',content:js},{name:'README.txt',content:readme}]);
+    const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=slug+'.zip';document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);
+  };
   const applyJson=()=>{try{const parsed=JSON.parse(jsonText);if(!Array.isArray(parsed.components))throw new Error('JSON must contain a components array.');const next=parsed.components.map((x,i)=>{if(!TYPES.some(t=>t[0]===x.component_type))throw new Error('Unsupported component type: '+x.component_type);return{id:makeLocalId(),page_id:pageId,component_type:x.component_type,properties:x.properties||{},sort_order:i};});record(next);setSelected(next[0]?.id||'');setShowJson(false);}catch(e){setError('JSON not applied: '+e.message);}};
   const updatePageTitle=async(value)=>{
     setPages(p=>p.map(x=>x.id===pageId?{...x,title:value}:x));
@@ -214,7 +257,7 @@ export default function BuilderEditor({website,user,onBack}) {
     <header className="builder-topbar">
       <button className="builder-back" onClick={onBack}>← Dashboard</button>
       <div className="builder-project-name"><b>{website.name}</b><span>www.sales.apokolips.xyz/{website.slug}</span></div>
-      <div className="builder-top-actions"><span className={dirty?'save-status pending':'save-status'}>{saving?'Saving…':dirty?'Unsaved':'Saved'}</span><button onClick={()=>void save()} disabled={!dirty||saving}>Save</button><button onClick={()=>void togglePublish()} disabled={publishing||dirty||saving}>{publishing?'Please wait…':publishStatus==='published'?'Unpublish':'Publish'}</button><button onClick={exportJson}>Export layout</button></div>
+      <div className="builder-top-actions"><span className={dirty?'save-status pending':'save-status'}>{saving?'Saving…':dirty?'Unsaved':'Saved'}</span><button onClick={()=>void save()} disabled={!dirty||saving}>Save</button><button onClick={()=>void togglePublish()} disabled={publishing||dirty||saving}>{publishing?'Please wait…':publishStatus==='published'?'Unpublish':'Publish'}</button><button onClick={exportJson}>Export layout</button><button onClick={exportWebsiteZip} disabled={!blocks.length}>Download ZIP</button></div>
     </header>
     <div className="builder-toolbar">
       <div className="builder-page-select"><label>PAGE</label><select value={pageId} onChange={e=>void switchPage(e.target.value)}>{pages.map(p=><option key={p.id} value={p.id}>{p.title}{p.is_homepage?' · Home':''}</option>)}</select><button onClick={()=>setShowPageForm(v=>!v)}>＋ Page</button></div>
