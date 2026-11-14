@@ -8,7 +8,7 @@ The Apokolips Website Builder uses the SLIATE-GPA-Calculator Supabase project as
 - Project URL: `https://qccbsuxomdqdwfnqoycb.supabase.co`
 - Browser key: Supabase publishable key only. Never use a service-role or secret key in this app.
 
-The project also stores GPA Calculator data. Builder objects are isolated in the seven `builder_*` tables and the private `builder-assets` Storage bucket. Existing GPA Calculator tables and records are retained separately.
+The project also stores GPA Calculator data. Builder records are isolated in the seven `builder_*` tables. The current Media Library uses the public `apokolips-media` Storage bucket; an empty private `builder-assets` bucket also remains from the initial migration but is not used by the frontend. Existing GPA Calculator tables and records are retained separately.
 
 ## Authentication
 
@@ -32,11 +32,11 @@ The Builder schema contains:
 
 RLS is enabled on every Builder table. Workspace role checks are implemented by narrowly scoped helper functions in the non-exposed `app_private` schema. Trigger functions create the default workspace/profile, create a Home page for new websites, maintain timestamps and snapshot publish events.
 
-A private Storage bucket named `builder-assets` is configured for future media uploads. Its policies scope access to the website ID in the first path segment:
+The Media Library uses the public Storage bucket `apokolips-media`, matching `dev-app/src/builder/MediaLibrary.jsx`. It allows the file types supported by the UI and files up to 100 MB. Object paths are scoped by website ID in the first path segment:
 
-`{website_id}/{file_name}`
+`{website_id}/{timestamp}-{index}-{file_name}`
 
-Only workspace owners/editors can upload, update or delete assets. Workspace members can read them. The source bucket contained no uploaded objects at migration time.
+Authenticated workspace members can list their website's files; owners/editors can upload and delete. The bucket is public so `getPublicUrl()` previews work, meaning anyone who knows a file URL can read that file. The source bucket contained no uploaded objects at migration time. The separate private `builder-assets` bucket is currently unused and empty.
 
 ## Website URL model
 
@@ -61,8 +61,9 @@ No service-role key or database password belongs in the frontend or Git reposito
 - Preserved 6 workspaces, 6 memberships, 3 websites, 5 pages, 39 page components and 3 website versions.
 - Consolidated all migrated workspace ownership and website creator references to `lakindusathsara65@gmail.com`.
 - Kept the destination GPA Calculator records and existing Auth accounts.
-- Enabled RLS and installed 22 Builder table policies plus 4 private Storage policies.
-- Created the private `builder-assets` bucket. No media objects were present in the source bucket.
+- Enabled RLS and installed 22 Builder table policies and 3 `apokolips-media` Storage policies.
+- Matched the source `apokolips-media` bucket settings (public, 100 MB limit, supported MIME types); the source bucket contained zero media objects.
+- The initial empty private `builder-assets` bucket remains unused; the frontend continues to use `apokolips-media`.
 - The former Xcontent Builder data has not yet been deleted. It will be retained until the application change is reviewed, merged and live-verified.
 
 ## Remaining deployment configuration
