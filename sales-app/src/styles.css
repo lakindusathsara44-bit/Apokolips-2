@@ -8,3 +8,5 @@
 .sales-table tbody tr:hover{background:#edf5fc}
 
 .sales-page a{color:var(--page-link-color,inherit)}
+
+.sales-table th,.sales-table td{border:var(--table-border-width,1px) var(--table-border-style,solid) var(--table-border-color,#d7e0e8)}
