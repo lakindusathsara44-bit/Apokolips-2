@@ -25,6 +25,85 @@ const defaults = {
 const clone = value => JSON.parse(JSON.stringify(value));
 const parseObject = value => { try { const parsed=JSON.parse(value||"{}"); return parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?parsed:{}; } catch { return {}; } };
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+const TABLE_COMMON_ATTRIBUTES = [
+  ['id','ID'],['class','CSS class'],['title','Tooltip title'],['role','Accessibility role'],
+  ['aria-label','Accessible label'],['border','Border width'],['cellpadding','Cell padding'],
+  ['cellspacing','Cell spacing'],['width','Width'],['align','Alignment'],['bgcolor','Background colour'],
+  ['summary','Table summary'],['scope','Header scope'],['abbr','Header abbreviation'],
+  ['colspan','Column span'],['rowspan','Row span'],['headers','Related header IDs'],['valign','Vertical alignment']
+];
+const parseTableHeaders = value => String(value||'Column 1, Column 2').split(',').map(x=>x.trim());
+const parseTableRows = value => { try { const rows=JSON.parse(value||'[]'); return Array.isArray(rows)?rows.map(row=>Array.isArray(row)?row:[]):[]; } catch { return []; } };
+const toReactAttributes = object => {
+  const aliases={class:'className',for:'htmlFor',colspan:'colSpan',rowspan:'rowSpan',cellpadding:'cellPadding',cellspacing:'cellSpacing',tabindex:'tabIndex',readonly:'readOnly',maxlength:'maxLength',minlength:'minLength',contenteditable:'contentEditable',crossorigin:'crossOrigin',datetime:'dateTime'};
+  const output={};
+  Object.entries(object||{}).forEach(([key,value])=>{
+    if(!/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(key)||/^on/i.test(key)||value===null||value===undefined||value===false)return;
+    const name=aliases[key.toLowerCase()]||key;
+    if(key.toLowerCase()==='style'){
+      if(value&&typeof value==='object'&&!Array.isArray(value))output.style=value;
+      else if(typeof value==='string'){
+        const styles={};value.split(';').forEach(part=>{const at=part.indexOf(':');if(at>0){const k=part.slice(0,at).trim().replace(/-([a-z])/g,(_,c)=>c.toUpperCase());styles[k]=part.slice(at+1).trim();}});
+        if(Object.keys(styles).length)output.style=styles;
+      }
+    } else output[name]=value===true?'':value;
+  });
+  return output;
+};
+const serializeHtmlAttributes = object => Object.entries(object||{}).filter(([key,value])=>/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(key)&&!/^on/i.test(key)&&value!==false&&value!==null&&value!==undefined).map(([key,value])=>{
+  const rendered=key.toLowerCase()==='style'&&value&&typeof value==='object'
+    ?Object.entries(value).map(([k,v])=>k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())+':'+v).join(';')
+    :value===true?'':String(value);
+  return ' '+key+'="'+escapeHtml(rendered)+'"';
+}).join('');
+
+
+function TableAttributeEditor({title,value,onChange,id}) {
+  const [draft,setDraft]=useState(()=>parseObject(value));
+  const [newName,setNewName]=useState('');
+  const [newValue,setNewValue]=useState('');
+  const [advanced,setAdvanced]=useState(false);
+  const [json,setJson]=useState(value||'{}');
+  useEffect(()=>{setDraft(parseObject(value));setJson(value||'{}');},[value,id]);
+  const setField=(key,next)=>setDraft(current=>({...current,[key]:next}));
+  const apply=()=>onChange(JSON.stringify(draft));
+  const custom=Object.keys(draft).filter(key=>!TABLE_COMMON_ATTRIBUTES.some(([name])=>name===key));
+  const add=()=>{
+    const key=newName.trim();
+    if(!key||! /^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(key)||/^on/i.test(key)||key.toLowerCase()==='style')return;
+    setDraft(current=>({...current,[key]:newValue}));
+    setNewName('');setNewValue('');
+  };
+  return <section className="table-attribute-editor">
+    <div className="table-attribute-title"><b>{title}</b><small>Change these fields without writing code</small></div>
+    <div className="table-common-attributes">{TABLE_COMMON_ATTRIBUTES.map(([key,label])=><label key={key}>{label}<input value={String(draft[key]??'')} placeholder="Not set" onChange={e=>setField(key,e.target.value)} /></label>)}</div>
+    <div className="table-custom-attributes"><b>Additional attributes</b>
+      {custom.map(key=><div className="table-attribute-row" key={key}><input aria-label="Attribute name" value={key} readOnly/><input aria-label={key+' value'} value={String(draft[key]??'')} onChange={e=>setField(key,e.target.value)} placeholder="Value"/><button type="button" onClick={()=>setDraft(current=>{const next={...current};delete next[key];return next;})}>Remove</button></div>)}
+      <div className="table-attribute-row add"><input aria-label="New attribute name" value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Attribute name"/><input aria-label="New attribute value" value={newValue} onChange={e=>setNewValue(e.target.value)} placeholder="Attribute value"/><button type="button" onClick={add}>Add</button></div>
+    </div>
+    <button type="button" className="table-apply-button" onClick={apply}>Apply {title.toLowerCase()}</button>
+    <details className="table-advanced-json"><summary>Advanced mode — edit JSON directly</summary><textarea spellCheck="false" rows={6} value={json} onChange={e=>setJson(e.target.value)} /><button type="button" onClick={()=>{try{const parsed=JSON.parse(json);if(!parsed||Array.isArray(parsed)||typeof parsed!=='object')throw new Error('Enter a JSON object.');setDraft(parsed);onChange(JSON.stringify(parsed));}catch(error){window.alert(error.message);}}}>Apply JSON</button></details>
+  </section>;
+}
+
+function TableDataEditor({properties,onChange}) {
+  const headers=parseTableHeaders(properties.headers);
+  const rows=parseTableRows(properties.rows);
+  const updateHeader=(index,value)=>{const next=[...headers];next[index]=value;onChange({headers:next.join(', ')});};
+  const updateCell=(rowIndex,colIndex,value)=>{const next=rows.map(row=>[...row]);while(next[rowIndex].length<headers.length)next[rowIndex].push('');next[rowIndex][colIndex]=value;onChange({rows:JSON.stringify(next)});};
+  const addRow=()=>onChange({rows:JSON.stringify([...rows,headers.map(()=> '')])});
+  const removeRow=index=>onChange({rows:JSON.stringify(rows.filter((_,i)=>i!==index))});
+  const addColumn=()=>{const nextHeaders=[...headers,'Column '+(headers.length+1)];onChange({headers:nextHeaders.join(', '),rows:JSON.stringify(rows.map(row=>[...row,'']))});};
+  const removeColumn=index=>{if(headers.length<=1)return;onChange({headers:headers.filter((_,i)=>i!==index).join(', '),rows:JSON.stringify(rows.map(row=>row.filter((_,i)=>i!==index)))});};
+  return <section className="table-data-editor">
+    <div className="table-attribute-title"><b>Table content</b><small>Edit cells like a spreadsheet — no JSON needed</small></div>
+    <div className="table-grid-scroll"><table className="table-edit-grid"><thead><tr>{headers.map((header,i)=><th key={i}><input aria-label={'Column '+(i+1)+' heading'} defaultValue={header} onBlur={e=>updateHeader(i,e.target.value)} /><button type="button" title="Remove column" disabled={headers.length<=1} onClick={()=>removeColumn(i)}>×</button></th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i}>{headers.map((_,j)=><td key={j}><input aria-label={'Row '+(i+1)+' column '+(j+1)} defaultValue={row[j]??''} onBlur={e=>updateCell(i,j,e.target.value)} /></td>)}<td className="table-row-action"><button type="button" onClick={()=>removeRow(i)}>Remove row</button></td></tr>)}</tbody></table></div>
+    <div className="table-data-actions"><button type="button" onClick={addRow}>＋ Add row</button><button type="button" onClick={addColumn}>＋ Add column</button></div>
+    <details className="table-advanced-json"><summary>Advanced mode — edit table data as JSON</summary><textarea spellCheck="false" rows={7} defaultValue={properties.rows||'[]'} key={properties.rows} onBlur={e=>{try{const parsed=JSON.parse(e.target.value);if(!Array.isArray(parsed)||parsed.some(row=>!Array.isArray(row)))throw new Error('Rows must be an array of arrays.');onChange('rows',JSON.stringify(parsed));}catch(error){window.alert(error.message);}}}/></details>
+  </section>;
+}
+
 const makeExportMarkup = item => {
   const p=item.properties||{};
   const style=[p._width?'width:'+Math.max(80,Number(p._width))+'px':'',p._height?'height:'+Math.max(40,Number(p._height))+'px':''].filter(Boolean).join(';');
@@ -39,7 +118,7 @@ const makeExportMarkup = item => {
     case 'card': return '<section class="block"'+attr+'><article class="card"><h3>'+escapeHtml(p.title||'Card title')+'</h3><p>'+escapeHtml(p.text||'')+'</p></article></section>';
     case 'navbar': return '<header class="block navbar"'+attr+'><strong>'+escapeHtml(p.brand||'Brand')+'</strong><nav>'+(p.links||'Home, About, Contact').split(',').map(x=>x.trim()).filter(Boolean).map(x=>'<a href="#'+escapeHtml(x.toLowerCase().replace(/[^a-z0-9]+/g,'-'))+'">'+escapeHtml(x)+'</a>').join('')+'</nav></header>';
     case 'footer': return '<footer class="block footer"'+attr+'>'+escapeHtml(p.text||'')+'</footer>';
-    case 'table': {const headers=(p.headers||'Column 1, Column 2').split(',').map(x=>x.trim());let rows=[],ta={},ha={},ca={};try{rows=JSON.parse(p.rows||'[]')}catch{}try{ta=JSON.parse(p.tableAttributes||'{}')}catch{}try{ha=JSON.parse(p.headerAttributes||'{}')}catch{}try{ca=JSON.parse(p.cellAttributes||'{}')}catch{}const attrs=o=>Object.entries(o).filter(([k])=>/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(k)&&!/^on/i.test(k)).map(([k,v])=>' '+k+'="'+escapeHtml(v)+'"').join('');return '<section class="block"'+attr+'><table class="builder-table"'+attrs(ta)+'><caption>'+escapeHtml(p.caption||'')+'</caption><thead><tr>'+headers.map(x=>'<th scope="col"'+attrs(ha)+'>'+escapeHtml(x)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+headers.map((_,i)=>'<td'+attrs(ca)+'>'+escapeHtml(row&&row[i]!==undefined?row[i]:'')+'</td>').join('')+'</tr>').join('')+'</tbody></table></section>';}
+    case 'table': {const headers=parseTableHeaders(p.headers);const rows=parseTableRows(p.rows);const ta=parseObject(p.tableAttributes),ha=parseObject(p.headerAttributes),ca=parseObject(p.cellAttributes);const thAttrs={scope:'col',...ha};const exportTableAttrs={...ta,class:['builder-table',ta.class||ta.className||''].filter(Boolean).join(' ')};delete exportTableAttrs.className;return '<section class="block"'+attr+'><table'+serializeHtmlAttributes(exportTableAttrs)+'><caption>'+escapeHtml(p.caption||'')+'</caption><thead><tr>'+headers.map(x=>'<th'+serializeHtmlAttributes(thAttrs)+'>'+escapeHtml(x)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+headers.map((_,i)=>'<td'+serializeHtmlAttributes(ca)+'>'+escapeHtml(row&&row[i]!==undefined?row[i]:'')+'</td>').join('')+'</tr>').join('')+'</tbody></table></section>';}
     case 'html': {const tag=HTML_TAGS.includes(p.tag)?p.tag:'div';let attrs={},styles={};try{attrs=JSON.parse(p.attributes||'{}')}catch{}try{styles=JSON.parse(p.styles||'{}')}catch{}const attrText=Object.entries(attrs).filter(([k])=>/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(k)&&!/^on/i.test(k)&&k!=='style').map(([k,v])=>' '+k+'="'+escapeHtml(v)+'"').join('');const css=Object.entries(styles).map(([k,v])=>k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())+':'+String(v)).join(';');return (p.customCSS?'<style>'+String(p.customCSS)+'</style>':'')+'<'+tag+attr+(css?' style="'+escapeHtml(css)+'"':'')+attrText+'>'+(VOID_TAGS.has(tag)?'':escapeHtml(p.content||'')+'</'+tag+'>');}
     default:return '';
   }
@@ -59,6 +138,19 @@ const createZipBlob = files => {
   return new Blob([...local,...central,end],{type:'application/zip'});
 };
 const makeLocalId = () => 'local-' + Math.random().toString(36).slice(2,11);
+
+const pageBackgroundStyle = settings => {
+  const image=String(settings?.backgroundImage||'').trim();
+  const safeImage=/^https:\/\//i.test(image)?image.replace(/["\\\n\r]/g,''):'';
+  return {
+    backgroundColor:/^#[0-9a-f]{6}$/i.test(String(settings?.backgroundColor||''))?settings.backgroundColor:'#ffffff',
+    backgroundImage:safeImage?('url("'+safeImage+'")'):'none',
+    backgroundSize:['cover','contain','auto'].includes(settings?.backgroundSize)?settings.backgroundSize:'cover',
+    backgroundPosition:['center center','top center','bottom center','left center','right center','left top','right top','left bottom','right bottom'].includes(settings?.backgroundPosition)?settings.backgroundPosition:'center center',
+    backgroundRepeat:['no-repeat','repeat','repeat-x','repeat-y'].includes(settings?.backgroundRepeat)?settings.backgroundRepeat:'no-repeat',
+    backgroundAttachment:['scroll','fixed'].includes(settings?.backgroundAttachment)?settings.backgroundAttachment:'scroll'
+  };
+};
 
 function renderBlock(item, selected, onSelect, preview, onResizeStart) {
   const p=item.properties||{};
@@ -82,7 +174,7 @@ function renderBlock(item, selected, onSelect, preview, onResizeStart) {
     case 'card': return <div {...common}><span className="block-kind">CARD</span><div className="site-card"><h3>{p.title||'Card title'}</h3><p>{p.text||'Card description'}</p></div></div>;
     case 'navbar': return <div {...common}><span className="block-kind">NAVIGATION</span><nav className="site-nav"><b>{p.brand||'Brand'}</b><span>{(p.links||'Home, About, Contact').split(',').map(x=>x.trim()).filter(Boolean).join('   ·   ')}</span></nav></div>;
     case 'footer': return <div {...common}><span className="block-kind">FOOTER</span><footer className="site-footer">{p.text||'Footer text'}</footer></div>;
-    case 'table': {const headers=(p.headers||'Column 1, Column 2').split(',').map(x=>x.trim());let rows=[],ta={},ha={},ca={};try{rows=JSON.parse(p.rows||'[]')}catch{}try{ta=JSON.parse(p.tableAttributes||'{}')}catch{}try{ha=JSON.parse(p.headerAttributes||'{}')}catch{}try{ca=JSON.parse(p.cellAttributes||'{}')}catch{}const clean=o=>{const out={};Object.entries(o).forEach(([k,v])=>{if(/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(k)&&!/^on/i.test(k))out[k]=v});return out;};return <div {...common}><span className="block-kind">TABLE</span><table className="builder-table" {...clean(ta)}><caption>{p.caption}</caption><thead><tr>{headers.map((h,i)=><th key={i} {...clean(ha)}>{h}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i}>{headers.map((_,j)=><td key={j} {...clean(ca)}>{row&&row[j]!==undefined?row[j]:''}</td>)}</tr>)}</tbody></table></div>;}
+    case 'table': {const headers=parseTableHeaders(p.headers);const rows=parseTableRows(p.rows);const ta=parseObject(p.tableAttributes),ha=parseObject(p.headerAttributes),ca=parseObject(p.cellAttributes);const tableProps=toReactAttributes(ta);return <div {...common}><span className="block-kind">TABLE</span><table {...tableProps} className={'builder-table '+(tableProps.className||'')}><caption>{p.caption}</caption><thead><tr>{headers.map((h,i)=><th key={i} {...toReactAttributes({scope:'col',...ha})}>{h}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i}>{headers.map((_,j)=><td key={j} {...toReactAttributes(ca)}>{row&&row[j]!==undefined?row[j]:''}</td>)}</tr>)}</tbody></table></div>;}
     case 'html': {const tag=HTML_TAGS.includes(p.tag)?p.tag:'div';let attrs={},styles={};try{attrs=JSON.parse(p.attributes||'{}')}catch{}try{styles=JSON.parse(p.styles||'{}')}catch{}const safeAttrs={};Object.entries(attrs).forEach(([k,v])=>{if(/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(k)&&!/^on/i.test(k)&&k!=='style')safeAttrs[k==='class'?'className':k==='for'?'htmlFor':k]=v;});const safeStyles={};Object.entries(styles).forEach(([k,v])=>{if(/^[a-zA-Z][a-zA-Z0-9]*$/.test(k))safeStyles[k]=v;});return <div {...common}>{p.customCSS&&<style>{p.customCSS}</style>}<span className="block-kind">HTML · &lt;{tag}&gt;</span>{React.createElement(tag,{...safeAttrs,style:safeStyles},VOID_TAGS.has(tag)?undefined:(p.content||''))}</div>;}
     default:return null;
   }
@@ -92,6 +184,7 @@ export default function BuilderEditor({website,user,onBack}) {
   const [pages,setPages]=useState([]);
   const [pageId,setPageId]=useState('');
   const [blocks,setBlocks]=useState([]);
+  const [pageSettings,setPageSettings]=useState({});
   const [selected,setSelected]=useState('');
   const [loading,setLoading]=useState(true);
   const [saving,setSaving]=useState(false);
@@ -146,10 +239,10 @@ export default function BuilderEditor({website,user,onBack}) {
   const load = useCallback(async()=>{
     setLoading(true);setError('');
     try{
-      const {data:pageRows,error:pageError}=await supabase.from('builder_website_pages').select('id,title,slug,page_order,is_homepage').eq('website_id',website.id).order('page_order');
+      const {data:pageRows,error:pageError}=await supabase.from('builder_website_pages').select('id,title,slug,page_order,is_homepage,settings').eq('website_id',website.id).order('page_order');
       if(pageError)throw pageError;
       const rows=pageRows||[];setPages(rows);
-      const active=rows.find(x=>x.id===pageId)||rows[0];setPageId(active?.id||'');
+      const active=rows.find(x=>x.id===pageId)||rows[0];setPageId(active?.id||'');setPageSettings(active?.settings||{});
       if(active){
         const {data:items,error:itemError}=await supabase.from('builder_page_components').select('id,page_id,component_type,properties,sort_order').eq('page_id',active.id).order('sort_order');
         if(itemError)throw itemError;
@@ -173,6 +266,11 @@ export default function BuilderEditor({website,user,onBack}) {
     if(!selectedBlock)return;
     record(blocks.map(b=>b.id===selected?{...b,properties:{...b.properties,[key]:value}}:b));
   };
+  const updatePageSetting=(key,value)=>{
+    setPageSettings(current=>({...current,[key]:value}));
+    setPages(current=>current.map(item=>item.id===pageId?{...item,settings:{...(item.settings||{}),[key]:value}}:item));
+    setDirty(true);setMessage('Unsaved changes');
+  };
   const removeSelected=()=>{
     if(!selectedBlock)return;
     record(blocks.filter(b=>b.id!==selected));setSelected('');
@@ -187,9 +285,12 @@ export default function BuilderEditor({website,user,onBack}) {
   const redo=()=>{if(!future.length)return;setHistory(h=>[...h,clone(blocks)]);setBlocks(future[0]);setFuture(f=>f.slice(1));setDirty(true);setMessage('Unsaved changes');};
 
   const save=useCallback(async()=>{
-    if(!dirty||savingRef.current||!pageId)return;
+    if(!dirty)return true;
+    if(savingRef.current||!pageId)return false;
     savingRef.current=true;setSaving(true);setMessage('Saving…');setError('');
     try{
+      const {error:settingsError}=await supabase.from('builder_website_pages').update({settings:pageSettings}).eq('id',pageId);
+      if(settingsError)throw settingsError;
       const {data:existing,error:readError}=await supabase.from('builder_page_components').select('id').eq('page_id',pageId);
       if(readError)throw readError;
       const localIds=blocks.filter(b=>!b.id.startsWith('local-')).map(b=>b.id);
@@ -206,38 +307,51 @@ export default function BuilderEditor({website,user,onBack}) {
       if(confirmError)throw confirmError;
       setBlocks(confirmed||[]);setSelected(current=>(confirmed||[]).some(x=>x.id===current)?current:confirmed?.[0]?.id||'');
       setDirty(false);setMessage('All changes saved');
-    }catch(e){setError(e.message||'Save failed. Your changes are still in this editor.');setMessage('Save failed');}
+      return true;
+    }catch(e){setError([e.message,e.details,e.hint].filter(Boolean).join(' · ')||'Save failed. Your changes are still in this editor.');setMessage('Save failed');return false;}
     finally{savingRef.current=false;setSaving(false);}
-  },[dirty,pageId,blocks]);
+  },[dirty,pageId,blocks,pageSettings]);
 
   useEffect(()=>{if(!dirty||loading)return;const timer=setTimeout(()=>void save(),1000);return()=>clearTimeout(timer);},[dirty,loading,save]);
   useEffect(()=>{const handler=e=>{if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='s'){e.preventDefault();void save();}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='z'){e.preventDefault();undo();}};window.addEventListener('keydown',handler);return()=>window.removeEventListener('keydown',handler);});
 
   async function togglePublish(){
-    if(dirty||saving){setPublishNotice('Save all changes before publishing.');return;}
+    if(publishing)return;
+    if(saving){setPublishNotice('Please wait until the current save finishes.');return;}
+    if(dirty){
+      const saved=await save();
+      if(!saved){setPublishNotice('Publishing stopped because the latest changes could not be saved. Check the save error above.');return;}
+    }
     setPublishing(true);setPublishNotice('');
+    const nextStatus=publishStatus==='published'?'draft':'published';
     try{
-      const action=publishStatus==='published'?'unpublish_builder_website':'publish_builder_website';
-      const {data,error}=await supabase.rpc(action,{p_website_id:website.id});
+      const action=nextStatus==='published'?'publish_builder_website':'unpublish_builder_website';
+      const {error}=await supabase.rpc(action,{p_website_id:website.id});
       if(error)throw error;
-      setPublishStatus(publishStatus==='published'?'draft':'published');
-      setPublishNotice(publishStatus==='published'?'Website unpublished.':'Website published successfully.');
-    }catch(error){setPublishNotice(error.message||'Could not update publishing status.');}
-    finally{setPublishing(false);}
+      const {data:verified,error:verifyError}=await supabase.from('builder_websites').select('status').eq('id',website.id).single();
+      if(verifyError)throw verifyError;
+      if(verified.status!==nextStatus)throw new Error('The database did not confirm the requested publishing status.');
+      setPublishStatus(verified.status);
+      setPublishNotice(nextStatus==='published'?'Website published successfully.':'Website unpublished.');
+    }catch(error){
+      setPublishNotice([error.message,error.details,error.hint].filter(Boolean).join(' · ')||'Could not update publishing status.');
+    }finally{setPublishing(false);}
   }
 
   async function addPage(e){
     e.preventDefault();const title=pageName.trim();const slug=title.toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'');
     if(!title||!slug)return;
-    const {data,error:e2}=await supabase.from('builder_website_pages').insert({website_id:website.id,title,slug,page_order:pages.length,is_homepage:false}).select('id,title,slug,page_order,is_homepage').single();
+    const {data,error:e2}=await supabase.from('builder_website_pages').insert({website_id:website.id,title,slug,page_order:pages.length,is_homepage:false}).select('id,title,slug,page_order,is_homepage,settings').single();
     if(e2){setError(e2.message);return;}
-    setPages(p=>[...p,data]);setPageId(data.id);setBlocks([]);setSelected('');setDirty(false);setPageName('');setShowPageForm(false);
+    setPages(p=>[...p,data]);setPageId(data.id);setPageSettings(data.settings||{});setBlocks([]);setSelected('');setDirty(false);setPageName('');setShowPageForm(false);
   }
   async function switchPage(id){
     if(dirty){await save();}
     const {data,error:e}=await supabase.from('builder_page_components').select('id,page_id,component_type,properties,sort_order').eq('page_id',id).order('sort_order');
     if(e){setError(e.message);return;}
-    setPageId(id);setBlocks(data||[]);setSelected(data?.[0]?.id||'');setDirty(false);setHistory([]);setFuture([]);
+    const {data:pageRow,error:pageError}=await supabase.from('builder_website_pages').select('settings').eq('id',id).single();
+    if(pageError){setError(pageError.message);return;}
+    setPageId(id);setPageSettings(pageRow?.settings||{});setBlocks(data||[]);setSelected(data?.[0]?.id||'');setDirty(false);setHistory([]);setFuture([]);
   }
   function dragStart(id){dragId.current=id;}
   function dropOn(id,event){
@@ -287,7 +401,7 @@ const exportWebsiteZip=async()=>{
     <header className="builder-topbar">
       <button className="builder-back" onClick={onBack}>← Dashboard</button>
       <div className="builder-project-name"><b>{website.name}</b><span>www.sales.apokolips.xyz/{website.slug}</span></div>
-      <div className="builder-top-actions"><span className={dirty?'save-status pending':'save-status'}>{saving?'Saving…':dirty?'Unsaved':'Saved'}</span><button onClick={()=>void save()} disabled={!dirty||saving}>Save</button><button onClick={()=>void togglePublish()} disabled={publishing||dirty||saving}>{publishing?'Please wait…':publishStatus==='published'?'Unpublish':'Publish'}</button><button onClick={exportJson}>Export layout</button><button onClick={exportWebsiteZip} disabled={!blocks.length}>Download ZIP</button></div>
+      <div className="builder-top-actions"><span className={dirty?'save-status pending':'save-status'}>{saving?'Saving…':dirty?'Unsaved':'Saved'}</span><button onClick={()=>void save()} disabled={!dirty||saving}>Save</button><button onClick={()=>void togglePublish()} disabled={publishing||saving}>{publishing?'Please wait…':publishStatus==='published'?'Unpublish':dirty?'Save & Publish':'Publish'}</button><button onClick={exportJson}>Export layout</button><button onClick={exportWebsiteZip} disabled={!blocks.length}>Download ZIP</button></div>
     </header>
     <div className="builder-toolbar">
       <div className="builder-page-select"><label>PAGE</label><select value={pageId} onChange={e=>void switchPage(e.target.value)}>{pages.map(p=><option key={p.id} value={p.id}>{p.title}{p.is_homepage?' · Home':''}</option>)}</select><button onClick={()=>setShowPageForm(v=>!v)}>＋ Page</button></div>
@@ -338,18 +452,18 @@ const exportWebsiteZip=async()=>{
         </div>}
       </aside>
       <section className="builder-canvas-area"><div className="canvas-heading"><span>PAGE CANVAS</span><small>Drag blocks to reorder · Select to edit</small></div>
-        <div className={'builder-canvas '+device} onDragOver={e=>e.preventDefault()} onDrop={e=>{const tag=e.dataTransfer.getData('builder-html-tag');const type=e.dataTransfer.getData('builder-component-type');if(tag&&HTML_TAGS.includes(tag)){e.preventDefault();addBlock('html',{tag});}else if(type&&TYPES.some(t=>t[0]===type)){e.preventDefault();addBlock(type);}}}>
+        <div className={'builder-canvas '+device} style={pageBackgroundStyle(pageSettings)} onDragOver={e=>e.preventDefault()} onDrop={e=>{const tag=e.dataTransfer.getData('builder-html-tag');const type=e.dataTransfer.getData('builder-component-type');if(tag&&HTML_TAGS.includes(tag)){e.preventDefault();addBlock('html',{tag});}else if(type&&TYPES.some(t=>t[0]===type)){e.preventDefault();addBlock(type);}}}>
           <div className="canvas-site-head"><b>{website.name}</b><span>{page?.title||'Home'}</span></div>
           {blocks.length?blocks.map((b)=><div key={b.id} draggable onDragStart={()=>dragStart(b.id)} onDragOver={e=>e.preventDefault()} onDrop={e=>dropOn(b.id,e)}>{renderBlock(b,b.id===selected,setSelected,false,startResize)}<div className="canvas-reorder"><button onClick={()=>move(b.id,-1)}>↑</button><button onClick={()=>move(b.id,1)}>↓</button></div></div>):<div className="canvas-empty"><b>Start building this page</b><p>Choose an element from the left panel to add it to your canvas.</p></div>}
           <div className="canvas-end">End of page</div>
         </div>
       </section>
-      <aside className="builder-inspector"><div className="inspector-tabs"><button className={tab==='properties'?'active':''} onClick={()=>setTab('properties')}>Properties</button><button className={tab==='layers'?'active':''} onClick={()=>setTab('layers')}>Layers</button></div>
-        {tab==='layers'?<div className="layer-list">{blocks.map((b,i)=><button key={b.id} className={selected===b.id?'active':''} onClick={()=>setSelected(b.id)}><span>{TYPES.find(t=>t[0]===b.component_type)?.[1]}</span><small>{i+1}</small></button>)}</div>:selectedBlock?<div className="property-form"><div className="property-heading"><b>{TYPES.find(t=>t[0]===selectedBlock.component_type)?.[1]}</b><button onClick={removeSelected}>Delete</button></div>
+      <aside className="builder-inspector"><div className="inspector-tabs"><button className={tab==='properties'?'active':''} onClick={()=>setTab('properties')}>Properties</button><button className={tab==='layers'?'active':''} onClick={()=>setTab('layers')}>Layers</button><button className={tab==='page'?'active':''} onClick={()=>setTab('page')}>Page</button></div>
+        {tab==='page'?<div className="builder-page-settings"><div className="property-heading"><b>PAGE BACKGROUND</b><small>Saved with this page</small></div><label>Background colour<input type="color" value={pageSettings.backgroundColor||'#ffffff'} onChange={e=>updatePageSetting('backgroundColor',e.target.value)}/></label><label>Background image URL<input type="url" value={pageSettings.backgroundImage||''} placeholder="https://example.com/background.jpg" onChange={e=>updatePageSetting('backgroundImage',e.target.value)}/></label><label>Image size<select value={pageSettings.backgroundSize||'cover'} onChange={e=>updatePageSetting('backgroundSize',e.target.value)}><option value="cover">Cover</option><option value="contain">Contain</option><option value="auto">Original size</option></select></label><label>Image position<select value={pageSettings.backgroundPosition||'center center'} onChange={e=>updatePageSetting('backgroundPosition',e.target.value)}>{['center center','top center','bottom center','left center','right center','left top','right top','left bottom','right bottom'].map(value=><option key={value} value={value}>{value}</option>)}</select></label><label>Image repeat<select value={pageSettings.backgroundRepeat||'no-repeat'} onChange={e=>updatePageSetting('backgroundRepeat',e.target.value)}><option value="no-repeat">No repeat</option><option value="repeat">Repeat</option><option value="repeat-x">Repeat horizontally</option><option value="repeat-y">Repeat vertically</option></select></label><label>Background attachment<select value={pageSettings.backgroundAttachment||'scroll'} onChange={e=>updatePageSetting('backgroundAttachment',e.target.value)}><option value="scroll">Scroll</option><option value="fixed">Fixed</option></select></label><button className="secondary-button" onClick={()=>{setPageSettings({});setPages(current=>current.map(item=>item.id===pageId?{...item,settings:{}}:item));setDirty(true);setMessage('Unsaved changes');}}>Reset background</button></div>:tab==='layers'?<div className="layer-list">{blocks.map((b,i)=><button key={b.id} className={selected===b.id?'active':''} onClick={()=>setSelected(b.id)}><span>{TYPES.find(t=>t[0]===b.component_type)?.[1]}</span><small>{i+1}</small></button>)}</div>:selectedBlock?<div className="property-form"><div className="property-heading"><b>{TYPES.find(t=>t[0]===selectedBlock.component_type)?.[1]}</b><button onClick={removeSelected}>Delete</button></div>
           <div className="dimension-controls"><b>SIZE</b><label>Width (px)<input type="number" min="80" value={selectedBlock.properties?._width??''} placeholder="Auto" onChange={e=>updateProp('_width',e.target.value===''?undefined:Math.max(80,Number(e.target.value)))}/></label><label>Height (px)<input type="number" min="40" value={selectedBlock.properties?._height??''} placeholder="Auto" onChange={e=>updateProp('_height',e.target.value===''?undefined:Math.max(40,Number(e.target.value)))}/></label><small>Drag the blue corner on the selected element to resize visually.</small></div>
           {Object.entries(selectedBlock.properties||{}).filter(([key])=>!['attributes','styles','rows','tableAttributes','headerAttributes','cellAttributes','customCSS','customJS','_width','_height'].includes(key)).map(([key,value])=><label key={key}>{key==='tag'?'HTML tag':key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase())}{key==='tag'?<select value={value} onChange={e=>updateProp(key,e.target.value)}>{HTML_TAGS.map(tag=><option key={tag} value={tag}>&lt;{tag}&gt;</option>)}</select>:typeof value==='number'?<input type="number" value={value} onChange={e=>updateProp(key,Number(e.target.value))}/>:key==='color'||key==='background'?<input type="color" value={/^#[0-9a-f]{6}$/i.test(value)?value:'#ffffff'} onChange={e=>updateProp(key,e.target.value)}/>:<textarea rows={key==='text'||key==='content'?4:2} value={String(value??'')} onChange={e=>updateProp(key,e.target.value)}/>}</label>)}
           {selectedBlock.component_type==='html'&&<div className="advanced-element-tools"><label>HTML attributes (JSON)<textarea key={selectedBlock.id+'-attrs'} defaultValue={selectedBlock.properties.attributes||'{}'} rows={5} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Attributes must be a JSON object.');updateProp('attributes',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>CSS styles (JSON)<textarea key={selectedBlock.id+'-styles'} defaultValue={selectedBlock.properties.styles||'{}'} rows={5} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Styles must be a JSON object.');updateProp('styles',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>Custom CSS<textarea key={selectedBlock.id+'-css'} defaultValue={selectedBlock.properties.customCSS||''} rows={5} onBlur={e=>updateProp('customCSS',e.target.value)}/></label><label>Custom JavaScript (exported to script.js)<textarea key={selectedBlock.id+'-js'} defaultValue={selectedBlock.properties.customJS||''} rows={7} onBlur={e=>updateProp('customJS',e.target.value)}/></label></div>}
-          {selectedBlock.component_type==='table'&&<div className="advanced-element-tools"><label>Table attributes (JSON)<textarea key={selectedBlock.id+'-ta'} defaultValue={selectedBlock.properties.tableAttributes||'{}'} rows={3} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Use a JSON object.');updateProp('tableAttributes',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>Header cell attributes (JSON)<textarea key={selectedBlock.id+'-ha'} defaultValue={selectedBlock.properties.headerAttributes||'{}'} rows={3} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Use a JSON object.');updateProp('headerAttributes',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>Data cell attributes (JSON)<textarea key={selectedBlock.id+'-ca'} defaultValue={selectedBlock.properties.cellAttributes||'{}'} rows={3} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Use a JSON object.');updateProp('cellAttributes',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>Table rows (JSON array of arrays)<textarea key={selectedBlock.id+'-rows'} defaultValue={selectedBlock.properties.rows||'[]'} rows={8} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!Array.isArray(v)||v.some(row=>!Array.isArray(row)))throw new Error('Rows must be an array of arrays.');updateProp('rows',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label></div>}
+          {selectedBlock.component_type==='table'&&<div className="table-builder-tools"><TableDataEditor properties={selectedBlock.properties} onChange={changes=>record(blocks.map(block=>block.id===selected?{...block,properties:{...block.properties,...changes}}:block))}/><TableAttributeEditor id={selectedBlock.id+'-table'} title="Table attributes" value={selectedBlock.properties.tableAttributes||'{}'} onChange={value=>updateProp('tableAttributes',value)}/><TableAttributeEditor id={selectedBlock.id+'-header'} title="Header cell attributes" value={selectedBlock.properties.headerAttributes||'{}'} onChange={value=>updateProp('headerAttributes',value)}/><TableAttributeEditor id={selectedBlock.id+'-cell'} title="Data cell attributes" value={selectedBlock.properties.cellAttributes||'{}'} onChange={value=>updateProp('cellAttributes',value)}/></div>}
           <button className="json-toggle" onClick={()=>{setJsonText(JSON.stringify(selectedBlock.properties,null,2));setShowJson(v=>!v);}}>Advanced properties JSON</button>
           {showJson&&<div className="json-editor"><textarea value={jsonText} onChange={e=>setJsonText(e.target.value)} rows={9}/><button onClick={()=>{try{const props=JSON.parse(jsonText);if(!props||Array.isArray(props)||typeof props!=='object')throw new Error('Use a JSON object.');record(blocks.map(b=>b.id===selected?{...b,properties:props}:b));setShowJson(false);}catch(e){setError(e.message);}}}>Apply JSON</button></div>}
         </div>:<div className="inspector-empty">Select an element on the canvas or add one from the left panel.</div>}
