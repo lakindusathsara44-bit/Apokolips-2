@@ -20,6 +20,15 @@ function App() {
   }, [dark]);
 
   useEffect(() => {
+    const syncTheme = (event) => {
+      if (event.key !== 'apokolips-theme') return;
+      if (event.newValue === 'dark' || event.newValue === 'light') setDark(event.newValue === 'dark');
+    };
+    window.addEventListener('storage', syncTheme);
+    return () => window.removeEventListener('storage', syncTheme);
+  }, []);
+
+  useEffect(() => {
     const elements = document.querySelectorAll('[data-reveal]');
     if (!('IntersectionObserver' in window)) {
       elements.forEach(element => element.classList.add('is-visible'));

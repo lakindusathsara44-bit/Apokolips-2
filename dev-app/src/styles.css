@@ -289,3 +289,15 @@
   .builder-canvas{width:100%;max-width:100%}
   .canvas-block.selected::after{width:20px;height:20px}
 }
+
+
+/* The editor follows the shared Apokolips site theme preference. */
+html[data-theme="light"],html[data-theme="light"] body{background:#f5f7fa;color:#1d2939}
+html[data-theme="light"] #dev-root{filter:invert(1) hue-rotate(180deg)}
+html[data-theme="light"] #dev-root img,
+html[data-theme="light"] #dev-root video,
+html[data-theme="light"] #dev-root canvas,
+html[data-theme="light"] #dev-root iframe,
+html[data-theme="light"] #dev-root svg{filter:invert(1) hue-rotate(180deg)}
+html[data-theme="dark"],html[data-theme="dark"] body{background:#050505;color:#e8edf4}
+@media(prefers-reduced-motion:no-preference){#dev-root{transition:filter .22s ease}}
