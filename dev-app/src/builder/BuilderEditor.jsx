@@ -122,7 +122,7 @@ function TableDataEditor({properties,onChange}) {
 
 const makeExportMarkup = item => {
   const p=item.properties||{};
-  const style=[p._width?'width:'+Math.max(80,Number(p._width))+'px':'',p._height?'height:'+Math.max(40,Number(p._height))+'px':'',p._x!==undefined?'position:absolute;left:'+Math.max(0,Number(p._x)||0)+'px':'',p._y!==undefined?'top:'+Math.max(0,Number(p._y)||0)+'px':''].filter(Boolean).join(';');
+  const x=Math.max(0,Number(p._x)||0);const style=[p._width?'width:'+Math.max(80,Number(p._width))+'px':'',p._height?'height:'+Math.max(40,Number(p._height))+'px':'',p._x!==undefined?'position:absolute;left:'+x+'px;max-width:calc(100% - '+x+'px);box-sizing:border-box':'',p._y!==undefined?'top:'+Math.max(0,Number(p._y)||0)+'px':''].filter(Boolean).join(';');
   const attr=style?' style="'+style+'"':'';
   switch(item.component_type){
     case 'heading': {const level=Math.min(3,Math.max(1,Number(p.level)||1));return '<section class="block"'+attr+'><h'+level+' style="text-align:'+escapeHtml(p.align||'left')+';color:'+escapeHtml(p.color||'#172033')+'">'+escapeHtml(p.text||'Your heading')+'</h'+level+'></section>';}
