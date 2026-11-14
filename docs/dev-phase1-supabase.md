@@ -64,9 +64,9 @@ No service-role key or database password belongs in the frontend or Git reposito
 - Enabled RLS and installed 22 Builder table policies and 3 `apokolips-media` Storage policies.
 - Matched the source `apokolips-media` bucket settings (public, 100 MB limit, supported MIME types); the source bucket contained zero media objects.
 - The initial empty private `builder-assets` bucket remains unused; the frontend continues to use `apokolips-media`.
-- The former Xcontent Builder data has not yet been deleted. It will be retained until the application change is reviewed, merged and live-verified.
+- After the destination migration and production build were verified, the seven former Xcontent `builder_*` tables, Builder-specific functions, auth trigger and Storage policies were removed. The six original Xcontent Auth users were retained, and unrelated Xcontent tables/services were not modified.
 
 ## Remaining deployment configuration
 
-Set the destination Supabase Auth Site URL and Redirect URL allow-list to the actual deployed Dev page origin. Confirm email confirmation works after the frontend change is deployed. Do not add wildcard redirects.
+The frontend bundle now points to the destination project and the GitHub Pages production build/deployment completed. The destination Supabase Auth Site URL and Redirect URL allow-list still need a dashboard-side check against the deployed Dev page origin; confirm email verification works before relying on new-user confirmation flows. Do not add wildcard redirects.
 
