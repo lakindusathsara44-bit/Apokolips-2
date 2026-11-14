@@ -315,7 +315,15 @@ const exportWebsiteZip=async()=>{
         </div>}
         {builderPanel==='css'&&<div className="builder-tool-content code-tool-content">
           <div className="code-panel-heading">CSS EDITOR <span>Inline styles + custom stylesheet</span></div>
-          {selectedBlock?.component_type==='html'?<><textarea aria-label="Custom CSS" key={selectedBlock.id+'-tool-css'} defaultValue={selectedBlock.properties.customCSS||''} spellCheck="false" placeholder={"/* CSS for this element */\ncolor: #172033;\npadding: 16px;"} onBlur={e=>updateProp('customCSS',e.target.value)}/><p>Custom CSS is included in the exported website and visual preview. Use complete CSS rules/selectors.</p></>:<div className="tool-empty">Select an HTML element on the canvas to edit its CSS.</div>}
+          {selectedBlock?.component_type==='html'?<>
+            <label className="css-json-label">CSS properties (JSON)
+              <textarea aria-label="CSS properties JSON" key={selectedBlock.id+'-tool-styles'} defaultValue={selectedBlock.properties.styles||'{}'} spellCheck="false" onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('CSS properties must be a JSON object.');updateProp('styles',JSON.stringify(v));}catch(err){setError(err.message);}}}/>
+            </label>
+            <label className="css-code-label">Custom CSS stylesheet
+              <textarea aria-label="Custom CSS" key={selectedBlock.id+'-tool-css'} defaultValue={selectedBlock.properties.customCSS||''} spellCheck="false" placeholder={"/* Write complete CSS rules */\n.my-section {\n  color: #172033;\n  padding: 16px;\n}"} onBlur={e=>updateProp('customCSS',e.target.value)}/>
+            </label>
+            <p>Custom CSS is included in the exported website and visual preview. Use complete CSS selectors and rules.</p>
+          </>:<div className="tool-empty">Select an HTML element on the canvas to edit its CSS.</div>}
         </div>}
         {builderPanel==='js'&&<div className="builder-tool-content code-tool-content">
           <div className="code-panel-heading">CUSTOM JAVASCRIPT <span>Exported as script.js</span></div>
