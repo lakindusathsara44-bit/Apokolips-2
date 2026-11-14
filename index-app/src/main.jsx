@@ -20,6 +20,7 @@ function App() {
           <span>APOKOLIPS</span>
         </a>
         <nav className="header-actions" aria-label="Main actions">
+          <a className="plans-nav-button" href="./plans.html">Subdomain plans <span aria-hidden="true">↗</span></a>
           <a className="dev-button" href="./dev.html">Open Dev workspace <span aria-hidden="true">↗</span></a>
           <button className="theme-toggle" type="button" onClick={() => setDark(value => !value)} aria-label={dark ? 'Switch to light theme' : 'Switch to dark theme'} aria-pressed={dark}>
             <span aria-hidden="true">{dark ? '☀' : '☾'}</span><span>{dark ? 'Light mode' : 'Dark mode'}</span>
@@ -31,7 +32,10 @@ function App() {
         <p className="eyebrow">APOKOLIPS WEBSITE PLATFORM</p>
         <h1 id="landing-title">Ideas become<br /><span>something real.</span></h1>
         <p className="intro">Create, manage, and publish your website projects with the Apokolips platform.</p>
-        <a className="dev-button hero-dev-button" href="./dev.html">Go to Dev workspace <span aria-hidden="true">↗</span></a>
+        <div className="hero-actions">
+          <a className="dev-button hero-dev-button" href="./dev.html">Go to Dev workspace <span aria-hidden="true">↗</span></a>
+          <a className="plans-secondary-button" href="./plans.html">Explore Subdomain Plans <span aria-hidden="true">→</span></a>
+        </div>
       </section>
 
       <section className="service-section" aria-labelledby="service-title">
