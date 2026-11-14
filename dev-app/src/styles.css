@@ -259,3 +259,14 @@
 @media(max-width:620px){.builder-canvas{overflow:visible}.canvas-block{max-width:none}}
 
 .builder-canvas-area{overflow-x:auto;}
+
+
+/* HTML elements are first-class draggable blocks in the main toolbox */
+.tool-section-label{margin:13px 9px 7px;padding-top:10px;border-top:1px solid #2b3c4d;color:#a9c8e4;font-size:9px;font-weight:800;letter-spacing:.7px}
+.tool-section-label small{display:block;margin-top:4px;color:#8295a8;font-size:9px;font-weight:400;letter-spacing:0}
+.html-block-section-title{margin-top:15px}
+.html-tag-blocks{max-height:520px}
+.html-tag-blocks button{min-height:34px}
+.html-tag-blocks button code{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;font:inherit}
+.html-nonvisual-placeholder{display:flex;flex-direction:column;gap:5px;padding:12px;border:1px dashed #7893aa;border-radius:5px;background:#edf3f8;color:#344b60;font:12px ui-monospace,monospace}
+.html-nonvisual-placeholder small{color:#63798c;font:10px/1.5 system-ui,sans-serif}
