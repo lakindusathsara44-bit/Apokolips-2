@@ -257,3 +257,5 @@
 .builder-canvas>div[draggable="true"]{min-width:0;}
 .builder-canvas>div[draggable="true"]:has(>.canvas-block[style*="width"]){max-width:none;}
 @media(max-width:620px){.builder-canvas{overflow:visible}.canvas-block{max-width:none}}
+
+.builder-canvas-area{overflow-x:auto;}
