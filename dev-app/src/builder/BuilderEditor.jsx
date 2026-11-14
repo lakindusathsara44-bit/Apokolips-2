@@ -20,9 +20,18 @@ const defaults = {
 const clone = value => JSON.parse(JSON.stringify(value));
 const makeLocalId = () => 'local-' + Math.random().toString(36).slice(2,11);
 
-function renderBlock(item, selected, onSelect, preview) {
+function renderBlock(item, selected, onSelect, preview, onResizeStart) {
   const p=item.properties||{};
-  const common={onClick:()=>!preview&&onSelect(item.id),className:(preview?'preview-block':'canvas-block')+(selected&&!preview?' selected':'')};
+  const common={
+    onClick:()=>!preview&&onSelect(item.id),
+    onPointerDown:e=>{
+      if(preview||!selected||!onResizeStart)return;
+      const rect=e.currentTarget.getBoundingClientRect();
+      if(rect.right-e.clientX<=22&&rect.bottom-e.clientY<=22)onResizeStart(item.id,e,rect);
+    },
+    style:{width:p._width?Math.max(80,Number(p._width))+'px':undefined,height:p._height?Math.max(40,Number(p._height))+'px':undefined,boxSizing:'border-box'},
+    className:(preview?'preview-block':'canvas-block')+(selected&&!preview?' selected':'')
+  };
   switch(item.component_type){
     case 'heading': return <div {...common}><span className="block-kind">HEADING</span>{React.createElement('h'+Math.min(3,Math.max(1,Number(p.level)||1)),{style:{textAlign:p.align||'left',color:p.color||'#172033'}},p.text||'Your heading')}</div>;
     case 'text': return <div {...common}><span className="block-kind">TEXT</span><p style={{textAlign:p.align||'left',color:p.color||'#536174'}}>{p.text||'Your text'}</p></div>;
@@ -59,6 +68,33 @@ export default function BuilderEditor({website,user,onBack}) {
   const [publishing,setPublishing]=useState(false);
   const [publishNotice,setPublishNotice]=useState('');
   const dragId=useRef(null);
+  const resizeSession=useRef(null);
+
+  const startResize=(id,event,rect)=>{
+    event.preventDefault();
+    event.stopPropagation();
+    resizeSession.current={id,startX:event.clientX,startY:event.clientY,startWidth:rect.width,startHeight:rect.height,originalBlocks:clone(blocks)};
+    const moveResize=e=>{
+      const session=resizeSession.current;
+      if(!session)return;
+      const width=Math.max(80,Math.round(session.startWidth+e.clientX-session.startX));
+      const height=Math.max(40,Math.round(session.startHeight+e.clientY-session.startY));
+      setBlocks(current=>current.map(b=>b.id===session.id?{...b,properties:{...b.properties,_width:width,_height:height}}:b));
+      setDirty(true);setMessage('Unsaved changes');
+    };
+    const endResize=()=>{
+      const session=resizeSession.current;
+      if(!session)return;
+      setHistory(h=>[...h.slice(-39),session.originalBlocks]);setFuture([]);
+      resizeSession.current=null;
+      window.removeEventListener('pointermove',moveResize);
+      window.removeEventListener('pointerup',endResize);
+      window.removeEventListener('pointercancel',endResize);
+    };
+    window.addEventListener('pointermove',moveResize);
+    window.addEventListener('pointerup',endResize);
+    window.addEventListener('pointercancel',endResize);
+  };
   const savingRef=useRef(false);
   const selectedBlock=blocks.find(x=>x.id===selected)||null;
   const page=pages.find(x=>x.id===pageId)||null;
@@ -193,7 +229,7 @@ export default function BuilderEditor({website,user,onBack}) {
       <section className="builder-canvas-area"><div className="canvas-heading"><span>PAGE CANVAS</span><small>Drag blocks to reorder · Select to edit</small></div>
         <div className={'builder-canvas '+device}>
           <div className="canvas-site-head"><b>{website.name}</b><span>{page?.title||'Home'}</span></div>
-          {blocks.length?blocks.map((b)=><div key={b.id} draggable onDragStart={()=>dragStart(b.id)} onDragOver={e=>e.preventDefault()} onDrop={()=>dropOn(b.id)}>{renderBlock(b,b.id===selected,setSelected,false)}<div className="canvas-reorder"><button onClick={()=>move(b.id,-1)}>↑</button><button onClick={()=>move(b.id,1)}>↓</button></div></div>):<div className="canvas-empty"><b>Start building this page</b><p>Choose an element from the left panel to add it to your canvas.</p></div>}
+          {blocks.length?blocks.map((b)=><div key={b.id} draggable onDragStart={()=>dragStart(b.id)} onDragOver={e=>e.preventDefault()} onDrop={()=>dropOn(b.id)}>{renderBlock(b,b.id===selected,setSelected,false,startResize)}<div className="canvas-reorder"><button onClick={()=>move(b.id,-1)}>↑</button><button onClick={()=>move(b.id,1)}>↓</button></div></div>):<div className="canvas-empty"><b>Start building this page</b><p>Choose an element from the left panel to add it to your canvas.</p></div>}
           <div className="canvas-end">End of page</div>
         </div>
       </section>
