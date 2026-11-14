@@ -25,6 +25,85 @@ const defaults = {
 const clone = value => JSON.parse(JSON.stringify(value));
 const parseObject = value => { try { const parsed=JSON.parse(value||"{}"); return parsed&&typeof parsed==="object"&&!Array.isArray(parsed)?parsed:{}; } catch { return {}; } };
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+
+const TABLE_COMMON_ATTRIBUTES = [
+  ['id','ID'],['class','CSS class'],['title','Tooltip title'],['role','Accessibility role'],
+  ['aria-label','Accessible label'],['border','Border width'],['cellpadding','Cell padding'],
+  ['cellspacing','Cell spacing'],['width','Width'],['align','Alignment'],['bgcolor','Background colour'],
+  ['summary','Table summary'],['scope','Header scope'],['abbr','Header abbreviation'],
+  ['colspan','Column span'],['rowspan','Row span'],['headers','Related header IDs'],['valign','Vertical alignment']
+];
+const parseTableHeaders = value => String(value||'Column 1, Column 2').split(',').map(x=>x.trim());
+const parseTableRows = value => { try { const rows=JSON.parse(value||'[]'); return Array.isArray(rows)?rows.map(row=>Array.isArray(row)?row:[]):[]; } catch { return []; } };
+const toReactAttributes = object => {
+  const aliases={class:'className',for:'htmlFor',colspan:'colSpan',rowspan:'rowSpan',cellpadding:'cellPadding',cellspacing:'cellSpacing',tabindex:'tabIndex',readonly:'readOnly',maxlength:'maxLength',minlength:'minLength',contenteditable:'contentEditable',crossorigin:'crossOrigin',datetime:'dateTime'};
+  const output={};
+  Object.entries(object||{}).forEach(([key,value])=>{
+    if(!/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(key)||/^on/i.test(key)||value===null||value===undefined||value===false)return;
+    const name=aliases[key.toLowerCase()]||key;
+    if(key.toLowerCase()==='style'){
+      if(value&&typeof value==='object'&&!Array.isArray(value))output.style=value;
+      else if(typeof value==='string'){
+        const styles={};value.split(';').forEach(part=>{const at=part.indexOf(':');if(at>0){const k=part.slice(0,at).trim().replace(/-([a-z])/g,(_,c)=>c.toUpperCase());styles[k]=part.slice(at+1).trim();}});
+        if(Object.keys(styles).length)output.style=styles;
+      }
+    } else output[name]=value===true?'':value;
+  });
+  return output;
+};
+const serializeHtmlAttributes = object => Object.entries(object||{}).filter(([key,value])=>/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(key)&&!/^on/i.test(key)&&value!==false&&value!==null&&value!==undefined).map(([key,value])=>{
+  const rendered=key.toLowerCase()==='style'&&value&&typeof value==='object'
+    ?Object.entries(value).map(([k,v])=>k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())+':'+v).join(';')
+    :value===true?'':String(value);
+  return ' '+key+'="'+escapeHtml(rendered)+'"';
+}).join('');
+
+
+function TableAttributeEditor({title,value,onChange,id}) {
+  const [draft,setDraft]=useState(()=>parseObject(value));
+  const [newName,setNewName]=useState('');
+  const [newValue,setNewValue]=useState('');
+  const [advanced,setAdvanced]=useState(false);
+  const [json,setJson]=useState(value||'{}');
+  useEffect(()=>{setDraft(parseObject(value));setJson(value||'{}');},[value,id]);
+  const setField=(key,next)=>setDraft(current=>({...current,[key]:next}));
+  const apply=()=>onChange(JSON.stringify(draft));
+  const custom=Object.keys(draft).filter(key=>!TABLE_COMMON_ATTRIBUTES.some(([name])=>name===key));
+  const add=()=>{
+    const key=newName.trim();
+    if(!key||! /^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(key)||/^on/i.test(key)||key.toLowerCase()==='style')return;
+    setDraft(current=>({...current,[key]:newValue}));
+    setNewName('');setNewValue('');
+  };
+  return <section className="table-attribute-editor">
+    <div className="table-attribute-title"><b>{title}</b><small>Change these fields without writing code</small></div>
+    <div className="table-common-attributes">{TABLE_COMMON_ATTRIBUTES.map(([key,label])=><label key={key}>{label}<input value={String(draft[key]??'')} placeholder="Not set" onChange={e=>setField(key,e.target.value)} /></label>)}</div>
+    <div className="table-custom-attributes"><b>Additional attributes</b>
+      {custom.map(key=><div className="table-attribute-row" key={key}><input aria-label="Attribute name" value={key} readOnly/><input aria-label={key+' value'} value={String(draft[key]??'')} onChange={e=>setField(key,e.target.value)} placeholder="Value"/><button type="button" onClick={()=>setDraft(current=>{const next={...current};delete next[key];return next;})}>Remove</button></div>)}
+      <div className="table-attribute-row add"><input aria-label="New attribute name" value={newName} onChange={e=>setNewName(e.target.value)} placeholder="Attribute name"/><input aria-label="New attribute value" value={newValue} onChange={e=>setNewValue(e.target.value)} placeholder="Attribute value"/><button type="button" onClick={add}>Add</button></div>
+    </div>
+    <button type="button" className="table-apply-button" onClick={apply}>Apply {title.toLowerCase()}</button>
+    <details className="table-advanced-json"><summary>Advanced mode — edit JSON directly</summary><textarea spellCheck="false" rows={6} value={json} onChange={e=>setJson(e.target.value)} /><button type="button" onClick={()=>{try{const parsed=JSON.parse(json);if(!parsed||Array.isArray(parsed)||typeof parsed!=='object')throw new Error('Enter a JSON object.');setDraft(parsed);onChange(JSON.stringify(parsed));}catch(error){window.alert(error.message);}}}>Apply JSON</button></details>
+  </section>;
+}
+
+function TableDataEditor({properties,onChange}) {
+  const headers=parseTableHeaders(properties.headers);
+  const rows=parseTableRows(properties.rows);
+  const updateHeader=(index,value)=>{const next=[...headers];next[index]=value;onChange('headers',next.join(', '));};
+  const updateCell=(rowIndex,colIndex,value)=>{const next=rows.map(row=>[...row]);while(next[rowIndex].length<headers.length)next[rowIndex].push('');next[rowIndex][colIndex]=value;onChange('rows',JSON.stringify(next));};
+  const addRow=()=>onChange('rows',JSON.stringify([...rows,headers.map(()=> '')]));
+  const removeRow=index=>onChange('rows',JSON.stringify(rows.filter((_,i)=>i!==index)));
+  const addColumn=()=>{const nextHeaders=[...headers,'Column '+(headers.length+1)];onChange('headers',nextHeaders.join(', '));onChange('rows',JSON.stringify(rows.map(row=>[...row,''])));};
+  const removeColumn=index=>{if(headers.length<=1)return;onChange('headers',headers.filter((_,i)=>i!==index).join(', '));onChange('rows',JSON.stringify(rows.map(row=>row.filter((_,i)=>i!==index))));};
+  return <section className="table-data-editor">
+    <div className="table-attribute-title"><b>Table content</b><small>Edit cells like a spreadsheet — no JSON needed</small></div>
+    <div className="table-grid-scroll"><table className="table-edit-grid"><thead><tr>{headers.map((header,i)=><th key={i}><input aria-label={'Column '+(i+1)+' heading'} defaultValue={header} onBlur={e=>updateHeader(i,e.target.value)} /><button type="button" title="Remove column" disabled={headers.length<=1} onClick={()=>removeColumn(i)}>×</button></th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i}>{headers.map((_,j)=><td key={j}><input aria-label={'Row '+(i+1)+' column '+(j+1)} defaultValue={row[j]??''} onBlur={e=>updateCell(i,j,e.target.value)} /></td>)}<td className="table-row-action"><button type="button" onClick={()=>removeRow(i)}>Remove row</button></td></tr>)}</tbody></table></div>
+    <div className="table-data-actions"><button type="button" onClick={addRow}>＋ Add row</button><button type="button" onClick={addColumn}>＋ Add column</button></div>
+    <details className="table-advanced-json"><summary>Advanced mode — edit table data as JSON</summary><textarea spellCheck="false" rows={7} defaultValue={properties.rows||'[]'} key={properties.rows} onBlur={e=>{try{const parsed=JSON.parse(e.target.value);if(!Array.isArray(parsed)||parsed.some(row=>!Array.isArray(row)))throw new Error('Rows must be an array of arrays.');onChange('rows',JSON.stringify(parsed));}catch(error){window.alert(error.message);}}}/></details>
+  </section>;
+}
+
 const makeExportMarkup = item => {
   const p=item.properties||{};
   const style=[p._width?'width:'+Math.max(80,Number(p._width))+'px':'',p._height?'height:'+Math.max(40,Number(p._height))+'px':''].filter(Boolean).join(';');
@@ -39,7 +118,7 @@ const makeExportMarkup = item => {
     case 'card': return '<section class="block"'+attr+'><article class="card"><h3>'+escapeHtml(p.title||'Card title')+'</h3><p>'+escapeHtml(p.text||'')+'</p></article></section>';
     case 'navbar': return '<header class="block navbar"'+attr+'><strong>'+escapeHtml(p.brand||'Brand')+'</strong><nav>'+(p.links||'Home, About, Contact').split(',').map(x=>x.trim()).filter(Boolean).map(x=>'<a href="#'+escapeHtml(x.toLowerCase().replace(/[^a-z0-9]+/g,'-'))+'">'+escapeHtml(x)+'</a>').join('')+'</nav></header>';
     case 'footer': return '<footer class="block footer"'+attr+'>'+escapeHtml(p.text||'')+'</footer>';
-    case 'table': {const headers=(p.headers||'Column 1, Column 2').split(',').map(x=>x.trim());let rows=[],ta={},ha={},ca={};try{rows=JSON.parse(p.rows||'[]')}catch{}try{ta=JSON.parse(p.tableAttributes||'{}')}catch{}try{ha=JSON.parse(p.headerAttributes||'{}')}catch{}try{ca=JSON.parse(p.cellAttributes||'{}')}catch{}const attrs=o=>Object.entries(o).filter(([k])=>/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(k)&&!/^on/i.test(k)).map(([k,v])=>' '+k+'="'+escapeHtml(v)+'"').join('');return '<section class="block"'+attr+'><table class="builder-table"'+attrs(ta)+'><caption>'+escapeHtml(p.caption||'')+'</caption><thead><tr>'+headers.map(x=>'<th scope="col"'+attrs(ha)+'>'+escapeHtml(x)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+headers.map((_,i)=>'<td'+attrs(ca)+'>'+escapeHtml(row&&row[i]!==undefined?row[i]:'')+'</td>').join('')+'</tr>').join('')+'</tbody></table></section>';}
+    case 'table': {const headers=parseTableHeaders(p.headers);const rows=parseTableRows(p.rows);const ta=parseObject(p.tableAttributes),ha=parseObject(p.headerAttributes),ca=parseObject(p.cellAttributes);const thAttrs={scope:'col',...ha};return '<section class="block"'+attr+'><table class="builder-table"'+serializeHtmlAttributes(ta)+'><caption>'+escapeHtml(p.caption||'')+'</caption><thead><tr>'+headers.map(x=>'<th'+serializeHtmlAttributes(thAttrs)+'>'+escapeHtml(x)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+headers.map((_,i)=>'<td'+serializeHtmlAttributes(ca)+'>'+escapeHtml(row&&row[i]!==undefined?row[i]:'')+'</td>').join('')+'</tr>').join('')+'</tbody></table></section>';}
     case 'html': {const tag=HTML_TAGS.includes(p.tag)?p.tag:'div';let attrs={},styles={};try{attrs=JSON.parse(p.attributes||'{}')}catch{}try{styles=JSON.parse(p.styles||'{}')}catch{}const attrText=Object.entries(attrs).filter(([k])=>/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(k)&&!/^on/i.test(k)&&k!=='style').map(([k,v])=>' '+k+'="'+escapeHtml(v)+'"').join('');const css=Object.entries(styles).map(([k,v])=>k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())+':'+String(v)).join(';');return (p.customCSS?'<style>'+String(p.customCSS)+'</style>':'')+'<'+tag+attr+(css?' style="'+escapeHtml(css)+'"':'')+attrText+'>'+(VOID_TAGS.has(tag)?'':escapeHtml(p.content||'')+'</'+tag+'>');}
     default:return '';
   }
@@ -95,7 +174,7 @@ function renderBlock(item, selected, onSelect, preview, onResizeStart) {
     case 'card': return <div {...common}><span className="block-kind">CARD</span><div className="site-card"><h3>{p.title||'Card title'}</h3><p>{p.text||'Card description'}</p></div></div>;
     case 'navbar': return <div {...common}><span className="block-kind">NAVIGATION</span><nav className="site-nav"><b>{p.brand||'Brand'}</b><span>{(p.links||'Home, About, Contact').split(',').map(x=>x.trim()).filter(Boolean).join('   ·   ')}</span></nav></div>;
     case 'footer': return <div {...common}><span className="block-kind">FOOTER</span><footer className="site-footer">{p.text||'Footer text'}</footer></div>;
-    case 'table': {const headers=(p.headers||'Column 1, Column 2').split(',').map(x=>x.trim());let rows=[],ta={},ha={},ca={};try{rows=JSON.parse(p.rows||'[]')}catch{}try{ta=JSON.parse(p.tableAttributes||'{}')}catch{}try{ha=JSON.parse(p.headerAttributes||'{}')}catch{}try{ca=JSON.parse(p.cellAttributes||'{}')}catch{}const clean=o=>{const out={};Object.entries(o).forEach(([k,v])=>{if(/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(k)&&!/^on/i.test(k))out[k]=v});return out;};return <div {...common}><span className="block-kind">TABLE</span><table className="builder-table" {...clean(ta)}><caption>{p.caption}</caption><thead><tr>{headers.map((h,i)=><th key={i} {...clean(ha)}>{h}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i}>{headers.map((_,j)=><td key={j} {...clean(ca)}>{row&&row[j]!==undefined?row[j]:''}</td>)}</tr>)}</tbody></table></div>;}
+    case 'table': {const headers=parseTableHeaders(p.headers);const rows=parseTableRows(p.rows);const ta=parseObject(p.tableAttributes),ha=parseObject(p.headerAttributes),ca=parseObject(p.cellAttributes);return <div {...common}><span className="block-kind">TABLE</span><table className="builder-table" {...toReactAttributes(ta)}><caption>{p.caption}</caption><thead><tr>{headers.map((h,i)=><th key={i} {...toReactAttributes({scope:'col',...ha})}>{h}</th>)}</tr></thead><tbody>{rows.map((row,i)=><tr key={i}>{headers.map((_,j)=><td key={j} {...toReactAttributes(ca)}>{row&&row[j]!==undefined?row[j]:''}</td>)}</tr>)}</tbody></table></div>;}
     case 'html': {const tag=HTML_TAGS.includes(p.tag)?p.tag:'div';let attrs={},styles={};try{attrs=JSON.parse(p.attributes||'{}')}catch{}try{styles=JSON.parse(p.styles||'{}')}catch{}const safeAttrs={};Object.entries(attrs).forEach(([k,v])=>{if(/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(k)&&!/^on/i.test(k)&&k!=='style')safeAttrs[k==='class'?'className':k==='for'?'htmlFor':k]=v;});const safeStyles={};Object.entries(styles).forEach(([k,v])=>{if(/^[a-zA-Z][a-zA-Z0-9]*$/.test(k))safeStyles[k]=v;});return <div {...common}>{p.customCSS&&<style>{p.customCSS}</style>}<span className="block-kind">HTML · &lt;{tag}&gt;</span>{React.createElement(tag,{...safeAttrs,style:safeStyles},VOID_TAGS.has(tag)?undefined:(p.content||''))}</div>;}
     default:return null;
   }
@@ -384,7 +463,7 @@ const exportWebsiteZip=async()=>{
           <div className="dimension-controls"><b>SIZE</b><label>Width (px)<input type="number" min="80" value={selectedBlock.properties?._width??''} placeholder="Auto" onChange={e=>updateProp('_width',e.target.value===''?undefined:Math.max(80,Number(e.target.value)))}/></label><label>Height (px)<input type="number" min="40" value={selectedBlock.properties?._height??''} placeholder="Auto" onChange={e=>updateProp('_height',e.target.value===''?undefined:Math.max(40,Number(e.target.value)))}/></label><small>Drag the blue corner on the selected element to resize visually.</small></div>
           {Object.entries(selectedBlock.properties||{}).filter(([key])=>!['attributes','styles','rows','tableAttributes','headerAttributes','cellAttributes','customCSS','customJS','_width','_height'].includes(key)).map(([key,value])=><label key={key}>{key==='tag'?'HTML tag':key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase())}{key==='tag'?<select value={value} onChange={e=>updateProp(key,e.target.value)}>{HTML_TAGS.map(tag=><option key={tag} value={tag}>&lt;{tag}&gt;</option>)}</select>:typeof value==='number'?<input type="number" value={value} onChange={e=>updateProp(key,Number(e.target.value))}/>:key==='color'||key==='background'?<input type="color" value={/^#[0-9a-f]{6}$/i.test(value)?value:'#ffffff'} onChange={e=>updateProp(key,e.target.value)}/>:<textarea rows={key==='text'||key==='content'?4:2} value={String(value??'')} onChange={e=>updateProp(key,e.target.value)}/>}</label>)}
           {selectedBlock.component_type==='html'&&<div className="advanced-element-tools"><label>HTML attributes (JSON)<textarea key={selectedBlock.id+'-attrs'} defaultValue={selectedBlock.properties.attributes||'{}'} rows={5} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Attributes must be a JSON object.');updateProp('attributes',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>CSS styles (JSON)<textarea key={selectedBlock.id+'-styles'} defaultValue={selectedBlock.properties.styles||'{}'} rows={5} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Styles must be a JSON object.');updateProp('styles',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>Custom CSS<textarea key={selectedBlock.id+'-css'} defaultValue={selectedBlock.properties.customCSS||''} rows={5} onBlur={e=>updateProp('customCSS',e.target.value)}/></label><label>Custom JavaScript (exported to script.js)<textarea key={selectedBlock.id+'-js'} defaultValue={selectedBlock.properties.customJS||''} rows={7} onBlur={e=>updateProp('customJS',e.target.value)}/></label></div>}
-          {selectedBlock.component_type==='table'&&<div className="advanced-element-tools"><label>Table attributes (JSON)<textarea key={selectedBlock.id+'-ta'} defaultValue={selectedBlock.properties.tableAttributes||'{}'} rows={3} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Use a JSON object.');updateProp('tableAttributes',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>Header cell attributes (JSON)<textarea key={selectedBlock.id+'-ha'} defaultValue={selectedBlock.properties.headerAttributes||'{}'} rows={3} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Use a JSON object.');updateProp('headerAttributes',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>Data cell attributes (JSON)<textarea key={selectedBlock.id+'-ca'} defaultValue={selectedBlock.properties.cellAttributes||'{}'} rows={3} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Use a JSON object.');updateProp('cellAttributes',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>Table rows (JSON array of arrays)<textarea key={selectedBlock.id+'-rows'} defaultValue={selectedBlock.properties.rows||'[]'} rows={8} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!Array.isArray(v)||v.some(row=>!Array.isArray(row)))throw new Error('Rows must be an array of arrays.');updateProp('rows',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label></div>}
+          {selectedBlock.component_type==='table'&&<div className="table-builder-tools"><TableDataEditor properties={selectedBlock.properties} onChange={updateProp}/><TableAttributeEditor id={selectedBlock.id+'-table'} title="Table attributes" value={selectedBlock.properties.tableAttributes||'{}'} onChange={value=>updateProp('tableAttributes',value)}/><TableAttributeEditor id={selectedBlock.id+'-header'} title="Header cell attributes" value={selectedBlock.properties.headerAttributes||'{}'} onChange={value=>updateProp('headerAttributes',value)}/><TableAttributeEditor id={selectedBlock.id+'-cell'} title="Data cell attributes" value={selectedBlock.properties.cellAttributes||'{}'} onChange={value=>updateProp('cellAttributes',value)}/></div>}
           <button className="json-toggle" onClick={()=>{setJsonText(JSON.stringify(selectedBlock.properties,null,2));setShowJson(v=>!v);}}>Advanced properties JSON</button>
           {showJson&&<div className="json-editor"><textarea value={jsonText} onChange={e=>setJsonText(e.target.value)} rows={9}/><button onClick={()=>{try{const props=JSON.parse(jsonText);if(!props||Array.isArray(props)||typeof props!=='object')throw new Error('Use a JSON object.');record(blocks.map(b=>b.id===selected?{...b,properties:props}:b));setShowJson(false);}catch(e){setError(e.message);}}}>Apply JSON</button></div>}
         </div>:<div className="inspector-empty">Select an element on the canvas or add one from the left panel.</div>}
