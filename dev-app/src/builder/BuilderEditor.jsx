@@ -1,10 +1,13 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { supabase } from '../lib/supabase.js';
 
+const HTML_TAGS = 'a abbr address area article aside audio b base bdi bdo blockquote body br button canvas caption cite code col colgroup data datalist dd del details dfn dialog div dl dt em embed fieldset figcaption figure footer form h1 h2 h3 h4 h5 h6 head header hgroup hr i iframe img input ins kbd label legend li link main map mark menu meta meter nav noscript object ol optgroup option output p picture pre progress q rp rt ruby s samp script search section select slot small source span strong style sub summary sup table tbody td template textarea tfoot th thead time title tr track u ul var video wbr'.split(' ');
+const VOID_TAGS = new Set('area base br col embed hr img input link meta source track wbr'.split(' '));
 const TYPES = [
   ['heading','Heading','Aa'],['text','Text','¶'],['button','Button','▰'],
   ['image','Image','▧'],['container','Container','▱'],['columns','Columns','▥'],
-  ['card','Card','▣'],['navbar','Navigation','☰'],['footer','Footer','⌄']
+  ['card','Card','▣'],['navbar','Navigation','☰'],['footer','Footer','⌄'],
+  ['table','Table','▦'],['html','HTML element','<>']
 ];
 const defaults = {
   heading:{text:'A clear headline for your website',level:1,align:'left',color:'#172033'},
@@ -15,7 +18,9 @@ const defaults = {
   columns:{left:'First column content',right:'Second column content'},
   card:{title:'Feature title',text:'Describe a useful feature or service.'},
   navbar:{brand:'Your brand',links:'Home, About, Contact'},
-  footer:{text:'© Your brand. All rights reserved.'}
+  footer:{text:'© Your brand. All rights reserved.'},
+  table:{caption:'Data table',headers:'Name, Description, Status',rows:'[["Item 1","First row","Active"],["Item 2","Second row","Pending"]]',border:'1'},
+  html:{tag:'div',content:'Custom HTML element',attributes:'{}',styles:'{}',customCSS:'',customJS:''}
 };
 const clone = value => JSON.parse(JSON.stringify(value));
 const escapeHtml = value => String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
