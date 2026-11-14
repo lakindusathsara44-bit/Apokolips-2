@@ -311,7 +311,14 @@ const exportWebsiteZip=async()=>{
           <label className="tag-search-label">SEARCH HTML TAGS<input value={tagSearch} onChange={e=>setTagSearch(e.target.value)} placeholder="Search tags… (e.g. input, video)"/></label>
           <div className="html-tag-count">{HTML_TAGS.filter(tag=>tag.includes(tagSearch.trim().toLowerCase())).length} of {HTML_TAGS.length} tags · Tap to add or drag to canvas</div>
           <div className="html-tag-grid">{HTML_TAGS.filter(tag=>tag.includes(tagSearch.trim().toLowerCase())).map(tag=><button key={tag} draggable onDragStart={e=>e.dataTransfer.setData('builder-html-tag',tag)} onClick={()=>addBlock('html',{tag})}>&lt;{tag}&gt;<span>＋</span></button>)}</div>
-          {selectedBlock?.component_type==='html'&&<div className="html-selected-note">Selected: <b>&lt;{selectedBlock.properties?.tag||'div'}&gt;</b>. Edit its attributes in Properties.</div>}
+          {selectedBlock?.component_type==='html'&&<>
+            <div className="html-selected-note">Selected: <b>&lt;{selectedBlock.properties?.tag||'div'}&gt;</b></div>
+            <div className="quick-attributes"><b>COMMON ATTRIBUTES</b>
+              {['id','class','title','role','aria-label','href','target','rel','src','alt','type','name','placeholder','value'].map(key=><label key={key}>{key}<input value={String(parseObject(selectedBlock.properties.attributes)[key]??'')} placeholder={key} onChange={e=>{const attrs=parseObject(selectedBlock.properties.attributes);if(e.target.value==='')delete attrs[key];else attrs[key]=e.target.value;updateProp('attributes',JSON.stringify(attrs));}}/></label>)}
+              {['required','disabled','checked','multiple','readonly','autofocus'].map(key=><label className="attribute-check" key={key}><input type="checkbox" checked={key in parseObject(selectedBlock.properties.attributes)} onChange={e=>{const attrs=parseObject(selectedBlock.properties.attributes);if(e.target.checked)attrs[key]=true;else delete attrs[key];updateProp('attributes',JSON.stringify(attrs));}}/> {key}</label>)}
+              <p>Any additional or tag-specific attribute can be entered in Properties → HTML attributes (JSON).</p>
+            </div>
+          </>}
         </div>}
         {builderPanel==='css'&&<div className="builder-tool-content code-tool-content">
           <div className="code-panel-heading">CSS EDITOR <span>Inline styles + custom stylesheet</span></div>
