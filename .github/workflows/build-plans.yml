@@ -70,6 +70,14 @@ jobs:
       - name: Build all React pages
         run: npm run build
 
+      - name: Publish landing page build into GitHub Pages root
+        run: |
+          test -s dist/index/index.html
+          rm -rf assets/index-app
+          mkdir -p assets/index-app
+          cp dist/index/index.html index.html
+          cp -R dist/index/assets/index-app/. assets/index-app/
+
       - name: Verify generated entry points and bundles
         run: |
           test -s index.html

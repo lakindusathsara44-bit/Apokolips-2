@@ -270,3 +270,22 @@
 .html-tag-blocks button code{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:inherit;font:inherit}
 .html-nonvisual-placeholder{display:flex;flex-direction:column;gap:5px;padding:12px;border:1px dashed #7893aa;border-radius:5px;background:#edf3f8;color:#344b60;font:12px ui-monospace,monospace}
 .html-nonvisual-placeholder small{color:#63798c;font:10px/1.5 system-ui,sans-serif}
+
+
+/* True-size canvas geometry: the artboard width includes its padding and border. */
+.builder-canvas{
+  box-sizing:border-box;
+  width:100%;
+}
+.canvas-block.selected::after{
+  pointer-events:none;
+  z-index:3;
+  cursor:nwse-resize;
+}
+.canvas-block{
+  box-sizing:border-box;
+}
+@media(max-width:620px){
+  .builder-canvas{width:100%;max-width:100%}
+  .canvas-block.selected::after{width:20px;height:20px}
+}

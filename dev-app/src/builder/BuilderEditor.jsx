@@ -122,20 +122,27 @@ function TableDataEditor({properties,onChange}) {
 
 const makeExportMarkup = item => {
   const p=item.properties||{};
-  const x=Math.max(0,Number(p._x)||0);const style=[p._width?'width:'+Math.max(80,Number(p._width))+'px':'',p._height?'height:'+Math.max(40,Number(p._height))+'px':'',p._x!==undefined?'position:absolute;left:'+x+'px;max-width:calc(100% - '+x+'px);box-sizing:border-box':'',p._y!==undefined?'top:'+Math.max(0,Number(p._y)||0)+'px':''].filter(Boolean).join(';');
-  const attr=style?' style="'+style+'"':'';
+  const x=Math.max(0,Number(p._x)||0);
+  const layoutStyles={
+    ...(p._width?{width:Math.max(80,Number(p._width))+'px'}:{}),
+    ...(p._height?{height:Math.max(40,Number(p._height))+'px'}:{}),
+    ...(p._x!==undefined?{position:'absolute',left:x+'px','max-width':'calc(100% - '+x+'px)','box-sizing':'border-box'}:{}),
+    ...(p._y!==undefined?{top:Math.max(0,Number(p._y)||0)+'px'}:{})
+  };
+  const styleText=styles=>Object.entries(styles||{}).map(([key,value])=>key.replace(/[A-Z]/g,match=>'-'+match.toLowerCase())+':'+String(value)).join(';');
+  const attr=Object.keys(layoutStyles).length?' style="'+escapeHtml(styleText(layoutStyles))+'"':'';
   switch(item.component_type){
     case 'heading': {const level=Math.min(3,Math.max(1,Number(p.level)||1));return '<section class="block"'+attr+'><h'+level+' style="text-align:'+escapeHtml(p.align||'left')+';color:'+escapeHtml(p.color||'#172033')+'">'+escapeHtml(p.text||'Your heading')+'</h'+level+'></section>';}
     case 'text': return '<section class="block"'+attr+'><p style="text-align:'+escapeHtml(p.align||'left')+';color:'+escapeHtml(p.color||'#536174')+'">'+escapeHtml(p.text||'')+'</p></section>';
     case 'button': return '<section class="block"'+attr+'><a class="button '+(p.variant==='secondary'?'secondary':'')+'" href="'+escapeHtml(p.href||'#')+'">'+escapeHtml(p.text||'Button')+'</a></section>';
     case 'image': return '<section class="block"'+attr+'>'+(p.src?'<img class="image" src="'+escapeHtml(p.src)+'" alt="'+escapeHtml(p.alt||'')+'">':'<div class="image-placeholder">Image not configured</div>')+'</section>';
-    case 'container': return '<section class="block container"'+attr+' style="background:'+escapeHtml(p.background||'#f4f7fb')+';padding:'+Math.max(0,Number(p.padding)||24)+'px">'+escapeHtml(p.text||'')+'</section>';
+    case 'container': {const containerStyles={background:p.background||'#f4f7fb',padding:Math.max(0,Number(p.padding)||24)+'px',...layoutStyles};return '<section class="block container" style="'+escapeHtml(styleText(containerStyles))+'">'+escapeHtml(p.text||'')+'</section>';}
     case 'columns': return '<section class="block columns"'+attr+'><div>'+escapeHtml(p.left||'')+'</div><div>'+escapeHtml(p.right||'')+'</div></section>';
     case 'card': return '<section class="block"'+attr+'><article class="card"><h3>'+escapeHtml(p.title||'Card title')+'</h3><p>'+escapeHtml(p.text||'')+'</p></article></section>';
     case 'navbar': return '<header class="block navbar"'+attr+'><strong>'+escapeHtml(p.brand||'Brand')+'</strong><nav>'+(p.links||'Home, About, Contact').split(',').map(x=>x.trim()).filter(Boolean).map(x=>'<a href="#'+escapeHtml(x.toLowerCase().replace(/[^a-z0-9]+/g,'-'))+'">'+escapeHtml(x)+'</a>').join('')+'</nav></header>';
     case 'footer': return '<footer class="block footer"'+attr+'>'+escapeHtml(p.text||'')+'</footer>';
     case 'table': {const headers=parseTableHeaders(p.headers);const rows=parseTableRows(p.rows);const ta=parseObject(p.tableAttributes),ha=parseObject(p.headerAttributes),ca=parseObject(p.cellAttributes);const thAttrs={scope:'col',...ha};const exportTableAttrs={...ta,class:['builder-table',ta.class||ta.className||''].filter(Boolean).join(' ')};delete exportTableAttrs.className;return '<section class="block"'+attr+'><table'+serializeHtmlAttributes(exportTableAttrs)+'><caption>'+escapeHtml(p.caption||'')+'</caption><thead><tr>'+headers.map(x=>'<th'+serializeHtmlAttributes(thAttrs)+'>'+escapeHtml(x)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(row=>'<tr>'+headers.map((_,i)=>'<td'+serializeHtmlAttributes(ca)+'>'+escapeHtml(row&&row[i]!==undefined?row[i]:'')+'</td>').join('')+'</tr>').join('')+'</tbody></table></section>';}
-    case 'html': {const tag=HTML_TAGS.includes(p.tag)?p.tag:'div';let attrs={},styles={};try{attrs=JSON.parse(p.attributes||'{}')}catch{}try{styles=JSON.parse(p.styles||'{}')}catch{}const attrText=Object.entries(attrs).filter(([k])=>/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(k)&&!/^on/i.test(k)&&k!=='style').map(([k,v])=>' '+k+'="'+escapeHtml(v)+'"').join('');const css=Object.entries(styles).map(([k,v])=>k.replace(/[A-Z]/g,m=>'-'+m.toLowerCase())+':'+String(v)).join(';');return (p.customCSS?'<style>'+String(p.customCSS)+'</style>':'')+'<'+tag+attr+(css?' style="'+escapeHtml(css)+'"':'')+attrText+'>'+(VOID_TAGS.has(tag)?'':escapeHtml(p.content||'')+'</'+tag+'>');}
+    case 'html': {const tag=HTML_TAGS.includes(p.tag)?p.tag:'div';let attrs={},styles={};try{attrs=JSON.parse(p.attributes||'{}')}catch{}try{styles=JSON.parse(p.styles||'{}')}catch{}const attrText=Object.entries(attrs).filter(([k])=>/^[a-zA-Z_:][a-zA-Z0-9:._-]*$/.test(k)&&!/^on/i.test(k)&&k!=='style').map(([k,v])=>' '+k+'="'+escapeHtml(v)+'"').join('');const mergedStyles={...styles,...layoutStyles};const css=styleText(mergedStyles);return (p.customCSS?'<style>'+String(p.customCSS)+'</style>':'')+'<'+tag+(css?' style="'+escapeHtml(css)+'"':'')+attrText+'>'+(VOID_TAGS.has(tag)?'':escapeHtml(p.content||'')+'</'+tag+'>');}
     default:return '';
   }
 };
@@ -175,9 +182,10 @@ function renderBlock(item, selected, onSelect, preview, onResizeStart) {
   const common={
     onClick:()=>!preview&&onSelect(item.id),
     onPointerDown:e=>{
-      if(preview||!selected||!onResizeStart)return;
+      if(preview||!selected||!onResizeStart||e.button!==0)return;
       const rect=e.currentTarget.getBoundingClientRect();
-      if(rect.right-e.clientX<=22&&rect.bottom-e.clientY<=22)onResizeStart(item.id,e,rect);
+      const handleSize=window.matchMedia('(pointer: coarse)').matches?26:18;
+      if(rect.right-e.clientX<=handleSize&&rect.bottom-e.clientY<=handleSize)onResizeStart(item.id,e,rect);
     },
     style:{width:p._width?Math.max(80,Number(p._width))+'px':undefined,maxWidth:'100%',height:p._height?Math.max(40,Number(p._height))+'px':undefined,boxSizing:'border-box'},
     className:(preview?'preview-block':'canvas-block')+(selected&&!preview?' selected':'')
@@ -230,29 +238,35 @@ export default function BuilderEditor({website,user,onBack}) {
   const startResize=(id,event,rect)=>{
     event.preventDefault();
     event.stopPropagation();
-    resizeSession.current={id,startX:event.clientX,startY:event.clientY,startWidth:rect.width,startHeight:rect.height,originalBlocks:clone(blocks)};
+    const canvas=canvasRef.current;
+    const current=blocks.find(block=>block.id===id);
+    const left=Math.max(0,Number(current?.properties?._x)||0);
+    const canvasWidth=canvas?.clientWidth||rect.width;
+    const hasCanvasPosition=current?.properties?._x!==undefined&&current?.properties?._y!==undefined;
+    const computed=canvas?window.getComputedStyle(canvas):null;
+    const horizontalPadding=computed?(parseFloat(computed.paddingLeft)||0)+(parseFloat(computed.paddingRight)||0):0;
+    const availableWidth=Math.max(80,Math.floor(hasCanvasPosition?canvasWidth-left:canvasWidth-horizontalPadding));
+    resizeSession.current={id,startX:event.clientX,startY:event.clientY,startWidth:rect.width,startHeight:rect.height,originalBlocks:clone(blocks),moved:false};
     const moveResize=e=>{
       const session=resizeSession.current;
       if(!session)return;
-      const canvasWidth=canvasRef.current?.clientWidth||session.startWidth;
-      const current=blocks.find(b=>b.id===session.id);
-      const left=Math.max(0,Number(current?.properties?._x)||0);
-      const maxWidth=Math.max(80,canvasWidth-left-4);
-      const width=Math.min(maxWidth,Math.max(80,Math.round(session.startWidth+e.clientX-session.startX)));
-      const height=Math.max(40,Math.round(session.startHeight+e.clientY-session.startY));
-      setBlocks(current=>current.map(b=>b.id===session.id?{...b,properties:{...b.properties,_width:width,_height:height}}:b));
+      const width=Math.min(availableWidth,Math.max(80,Math.round(session.startWidth+e.clientX-session.startX)));
+      const height=Math.min(10000,Math.max(40,Math.round(session.startHeight+e.clientY-session.startY)));
+      if(width===session.startWidth&&height===session.startHeight)return;
+      session.moved=true;
+      setBlocks(currentBlocks=>currentBlocks.map(block=>block.id===session.id?{...block,properties:{...block.properties,_width:width,_height:height}}:block));
       setDirty(true);setMessage('Unsaved changes');
     };
     const endResize=()=>{
       const session=resizeSession.current;
       if(!session)return;
-      setHistory(h=>[...h.slice(-39),session.originalBlocks]);setFuture([]);
+      if(session.moved){setHistory(historyRows=>[...historyRows.slice(-39),session.originalBlocks]);setFuture([]);}
       resizeSession.current=null;
       window.removeEventListener('pointermove',moveResize);
       window.removeEventListener('pointerup',endResize);
       window.removeEventListener('pointercancel',endResize);
     };
-    window.addEventListener('pointermove',moveResize);
+    window.addEventListener('pointermove',moveResize,{passive:false});
     window.addEventListener('pointerup',endResize);
     window.addEventListener('pointercancel',endResize);
   };
@@ -289,7 +303,18 @@ export default function BuilderEditor({website,user,onBack}) {
   };
   const updateProp=(key,value)=>{
     if(!selectedBlock)return;
-    record(blocks.map(b=>b.id===selected?{...b,properties:{...b.properties,[key]:value}}:b));
+    let nextValue=value;
+    if(key==='_width'&&value!==undefined){
+      const canvas=canvasRef.current;
+      const left=Math.max(0,Number(selectedBlock.properties?._x)||0);
+      const positioned=selectedBlock.properties?._x!==undefined&&selectedBlock.properties?._y!==undefined;
+      const computed=canvas?window.getComputedStyle(canvas):null;
+      const padding=computed?(parseFloat(computed.paddingLeft)||0)+(parseFloat(computed.paddingRight)||0):0;
+      const available=Math.max(80,Math.floor(canvas?(positioned?canvas.clientWidth-left:canvas.clientWidth-padding):Number(value)));
+      nextValue=Math.min(available,Math.max(80,Math.round(Number(value)||80)));
+    }
+    if(key==='_height'&&value!==undefined)nextValue=Math.min(10000,Math.max(40,Math.round(Number(value)||40)));
+    record(blocks.map(b=>b.id===selected?{...b,properties:{...b.properties,[key]:nextValue}}:b));
   };
   const insertMediaBlock=(asset)=>{
     const mime=String(asset.mimeType||'').toLowerCase();
@@ -542,13 +567,13 @@ const exportWebsiteZip=async()=>{
       <section className="builder-canvas-area"><div className="canvas-heading"><span>PAGE CANVAS</span><small>Drag blocks to reorder · Select to edit</small></div>
         <div ref={canvasRef} className={'builder-canvas '+device} style={{...pageBackgroundStyle(pageSettings),minHeight:Math.max(600,...blocks.map(b=>Number.isFinite(Number(b.properties?._y))?Number(b.properties._y)+Math.max(40,Number(b.properties?._height)||120)+80:0))}} onDragOver={e=>e.preventDefault()} onDrop={e=>{const tag=e.dataTransfer.getData('builder-html-tag');const type=e.dataTransfer.getData('builder-component-type');const position=canvasDropPosition(e);if(tag&&HTML_TAGS.includes(tag)){e.preventDefault();addBlock('html',{tag},position);}else if(type&&TYPES.some(t=>t[0]===type)){e.preventDefault();addBlock(type,{},position);}}}>
           <div className="canvas-site-head"><b>{website.name}</b><span>{page?.title||'Home'}</span></div>
-          {blocks.length?blocks.map((b)=><div key={b.id} draggable onDragStart={()=>dragStart(b.id)} onDragOver={e=>e.preventDefault()} onDrop={e=>dropOn(b.id,e)} style={b.properties?._x!==undefined&&b.properties?._y!==undefined?(()=>{const left=Math.min(Math.max(0,Number(b.properties._x)||0),Math.max(0,(canvasRef.current?.clientWidth||600)-84));const available=Math.max(80,(canvasRef.current?.clientWidth||600)-left-4);const width=b.properties._width?Math.min(available,Math.max(80,Number(b.properties._width))):undefined;return {position:'absolute',left,top:Math.max(0,Number(b.properties._y)||0),right:width===undefined?4:undefined,width:width?width+'px':'auto',maxWidth:available+'px',height:b.properties._height?Math.max(40,Number(b.properties._height))+'px':'auto',boxSizing:'border-box',zIndex:b.id===selected?2:1};})():undefined}>{renderBlock(b,b.id===selected,setSelected,false,startResize)}<div className="canvas-reorder"><button onClick={()=>move(b.id,-1)}>↑</button><button onClick={()=>move(b.id,1)}>↓</button></div></div>):<div className="canvas-empty"><b>Start building this page</b><p>Choose an element from the left panel to add it to your canvas.</p></div>}
+          {blocks.length?blocks.map((b)=><div key={b.id} data-builder-wrapper={b.id} draggable onDragStart={e=>{if(resizeSession.current){e.preventDefault();return;}dragStart(b.id);}} onDragEnd={()=>{dragId.current=null;}} onDragOver={e=>e.preventDefault()} onDrop={e=>dropOn(b.id,e)} style={b.properties?._x!==undefined&&b.properties?._y!==undefined?(()=>{const left=Math.min(Math.max(0,Number(b.properties._x)||0),Math.max(0,(canvasRef.current?.clientWidth||600)-84));const available=Math.max(80,(canvasRef.current?.clientWidth||600)-left);const width=b.properties._width?Math.min(available,Math.max(80,Number(b.properties._width))):undefined;return {position:'absolute',left,top:Math.max(0,Number(b.properties._y)||0),right:width===undefined?0:undefined,width:width?width+'px':'auto',maxWidth:available+'px',height:b.properties._height?Math.max(40,Number(b.properties._height))+'px':'auto',boxSizing:'border-box',zIndex:b.id===selected?2:1};})():undefined}>{renderBlock(b,b.id===selected,setSelected,false,startResize)}<div className="canvas-reorder"><button onClick={()=>move(b.id,-1)}>↑</button><button onClick={()=>move(b.id,1)}>↓</button></div></div>):<div className="canvas-empty"><b>Start building this page</b><p>Choose an element from the left panel to add it to your canvas.</p></div>}
           <div className="canvas-end">End of page</div>
         </div>
       </section>
       <aside className="builder-inspector"><div className="inspector-tabs"><button className={tab==='properties'?'active':''} onClick={()=>setTab('properties')}>Properties</button><button className={tab==='layers'?'active':''} onClick={()=>setTab('layers')}>Layers</button><button className={tab==='page'?'active':''} onClick={()=>setTab('page')}>Page</button></div>
         {tab==='page'?<div className="builder-page-settings"><div className="property-heading"><b>PAGE BACKGROUND</b><small>Saved with this page</small></div><label>Background colour<input type="color" value={pageSettings.backgroundColor||'#ffffff'} onChange={e=>updatePageSetting('backgroundColor',e.target.value)}/></label><label>Text colour<input type="color" value={pageSettings.textColor||'#172033'} onChange={e=>updatePageSetting('textColor',e.target.value)}/></label><label>Link colour<input type="color" value={pageSettings.linkColor||'#24446f'} onChange={e=>updatePageSetting('linkColor',e.target.value)}/></label><label>Background image URL<input type="url" value={pageSettings.backgroundImage||''} placeholder="https://example.com/background.jpg" onChange={e=>updatePageSetting('backgroundImage',e.target.value)}/></label><button type="button" className="secondary-button" onClick={()=>setShowMediaLibrary(true)}>Choose from media library</button><label>Image size<select value={pageSettings.backgroundSize||'cover'} onChange={e=>updatePageSetting('backgroundSize',e.target.value)}><option value="cover">Cover</option><option value="contain">Contain</option><option value="auto">Original size</option></select></label><label>Image position<select value={pageSettings.backgroundPosition||'center center'} onChange={e=>updatePageSetting('backgroundPosition',e.target.value)}>{['center center','top center','bottom center','left center','right center','left top','right top','left bottom','right bottom'].map(value=><option key={value} value={value}>{value}</option>)}</select></label><label>Image repeat<select value={pageSettings.backgroundRepeat||'no-repeat'} onChange={e=>updatePageSetting('backgroundRepeat',e.target.value)}><option value="no-repeat">No repeat</option><option value="repeat">Repeat</option><option value="repeat-x">Repeat horizontally</option><option value="repeat-y">Repeat vertically</option></select></label><label>Background attachment<select value={pageSettings.backgroundAttachment||'scroll'} onChange={e=>updatePageSetting('backgroundAttachment',e.target.value)}><option value="scroll">Scroll</option><option value="fixed">Fixed</option></select></label><button className="secondary-button" onClick={()=>{setPageSettings({});setPages(current=>current.map(item=>item.id===pageId?{...item,settings:{}}:item));setDirty(true);setMessage('Unsaved changes');}}>Reset background</button></div>:tab==='layers'?<div className="layer-list">{blocks.map((b,i)=><button key={b.id} className={selected===b.id?'active':''} onClick={()=>setSelected(b.id)}><span>{TYPES.find(t=>t[0]===b.component_type)?.[1]}</span><small>{i+1}</small></button>)}</div>:selectedBlock?<div className="property-form"><div className="property-heading"><b>{TYPES.find(t=>t[0]===selectedBlock.component_type)?.[1]}</b><button onClick={removeSelected}>Delete</button></div>
-          <div className="dimension-controls"><b>SIZE</b><label>Width (px)<input type="number" min="80" value={selectedBlock.properties?._width??''} placeholder="Auto" onChange={e=>updateProp('_width',e.target.value===''?undefined:Math.max(80,Number(e.target.value)))}/></label><label>Height (px)<input type="number" min="40" value={selectedBlock.properties?._height??''} placeholder="Auto" onChange={e=>updateProp('_height',e.target.value===''?undefined:Math.max(40,Number(e.target.value)))}/></label><small>Drag the blue corner on the selected element to resize visually.</small></div>
+          <div className="dimension-controls"><b>SIZE · TRUE CSS PIXELS</b><label>Width (px)<input type="number" min="80" max="10000" step="1" value={selectedBlock.properties?._width??''} placeholder="Auto / natural width" onChange={e=>updateProp('_width',e.target.value===''?undefined:Math.max(80,Number(e.target.value)))}/></label><label>Height (px)<input type="number" min="40" max="10000" step="1" value={selectedBlock.properties?._height??''} placeholder="Auto / natural height" onChange={e=>updateProp('_height',e.target.value===''?undefined:Math.max(40,Number(e.target.value)))}/></label><small>Enter exact CSS-pixel dimensions or drag the blue bottom-right handle. Width is limited to the available canvas space; height is limited to 10,000 px. Blank keeps the natural size.</small></div>
           {Object.entries(selectedBlock.properties||{}).filter(([key])=>!['attributes','styles','rows','tableAttributes','headerAttributes','cellAttributes','customCSS','customJS','_width','_height','_x','_y'].includes(key)).map(([key,value])=><label key={key}>{key==='tag'?'HTML tag':key.replace(/([A-Z])/g,' $1').replace(/^./,s=>s.toUpperCase())}{key==='tag'?<select value={value} onChange={e=>updateProp(key,e.target.value)}>{HTML_TAGS.map(tag=><option key={tag} value={tag}>&lt;{tag}&gt;</option>)}</select>:typeof value==='number'?<input type="number" value={value} onChange={e=>updateProp(key,Number(e.target.value))}/>:key==='color'||key==='background'?<input type="color" value={/^#[0-9a-f]{6}$/i.test(value)?value:'#ffffff'} onChange={e=>updateProp(key,e.target.value)}/>:<textarea rows={key==='text'||key==='content'?4:2} value={String(value??'')} onChange={e=>updateProp(key,e.target.value)}/>}</label>)}
           {selectedBlock.component_type==='html'&&<div className="advanced-element-tools"><label>HTML attributes (JSON)<textarea key={selectedBlock.id+'-attrs'} defaultValue={selectedBlock.properties.attributes||'{}'} rows={5} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Attributes must be a JSON object.');updateProp('attributes',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>CSS styles (JSON)<textarea key={selectedBlock.id+'-styles'} defaultValue={selectedBlock.properties.styles||'{}'} rows={5} onBlur={e=>{try{const v=JSON.parse(e.target.value);if(!v||Array.isArray(v)||typeof v!=='object')throw new Error('Styles must be a JSON object.');updateProp('styles',JSON.stringify(v));}catch(err){setError(err.message);}}}/></label><label>Custom CSS<textarea key={selectedBlock.id+'-css'} defaultValue={selectedBlock.properties.customCSS||''} rows={5} onBlur={e=>updateProp('customCSS',e.target.value)}/></label><label>Custom JavaScript (exported to script.js)<textarea key={selectedBlock.id+'-js'} defaultValue={selectedBlock.properties.customJS||''} rows={7} onBlur={e=>updateProp('customJS',e.target.value)}/></label></div>}
           {selectedBlock.component_type==='table'&&<div className="table-builder-tools"><TableDataEditor properties={selectedBlock.properties} onChange={changes=>record(blocks.map(block=>block.id===selected?{...block,properties:{...block.properties,...changes}}:block))}/><TableBorderControls value={selectedBlock.properties.tableAttributes||'{"border":"1"}'} onChange={value=>updateProp('tableAttributes',value)}/><TableAttributeEditor id={selectedBlock.id+'-table'} title="Table attributes" value={selectedBlock.properties.tableAttributes||'{}'} onChange={value=>updateProp('tableAttributes',value)}/><TableAttributeEditor id={selectedBlock.id+'-header'} title="Header cell attributes" value={selectedBlock.properties.headerAttributes||'{}'} onChange={value=>updateProp('headerAttributes',value)}/><TableAttributeEditor id={selectedBlock.id+'-cell'} title="Data cell attributes" value={selectedBlock.properties.cellAttributes||'{}'} onChange={value=>updateProp('cellAttributes',value)}/></div>}
