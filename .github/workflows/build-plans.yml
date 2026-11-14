@@ -95,7 +95,9 @@ jobs:
           grep -q 'Choose Pro' plans.html
           grep -q 'Choose Premium' plans.html
           grep -q 'apokolips.contact@gmail.com' plans.html
-          grep -q 'Subdomain plans' index-app/src/main.jsx
+          grep -q 'Subdomain Plans' index-app/src/main.jsx
+          grep -q 'Open Editor' index-app/src/main.jsx
+          grep -q 'What You Can Do' index-app/src/main.jsx || grep -q 'WHAT YOU CAN DO' index-app/src/main.jsx
           find assets/index-app -type f -size +0c | grep -q .
           echo "Verified Index, Dev and Sales bundles plus the standalone Subdomain Plans page."
 
