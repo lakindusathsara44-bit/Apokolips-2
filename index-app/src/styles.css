@@ -56,3 +56,36 @@
 [data-theme=dark] .plans-nav-button:hover,[data-theme=dark] .plans-secondary-button:hover{background:#122033;border-color:#8ab7e2}
 @media(max-width:700px){.header-actions{max-width:75%}.plans-nav-button{min-height:36px;padding:0 10px;font-size:10px}}
 @media(max-width:420px){.header-actions{max-width:78%}.plans-nav-button{font-size:9px;padding:0 8px}}
+
+/* Homepage introduction, inline subdomain plans, and clear access choices. */
+.landing-hero{padding:76px 18px 62px}
+.landing-hero h1{font-size:clamp(38px,6.5vw,64px)}
+.plan-grid-home{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:14px;margin-top:27px}
+.home-plan-card{display:flex;flex-direction:column;min-width:0;padding:21px 18px;border:1px solid #dce2e9;border-radius:6px;background:#fff;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease}
+.home-plan-card:hover{transform:translateY(-5px);border-color:#9bb3ca;box-shadow:0 10px 24px #17345112}
+.home-plan-card h3{margin:0;color:#183b5d;font-size:18px}
+.home-plan-count{margin:7px 0 17px;color:#718095;font-size:11px}
+.home-plan-price{margin:0;color:#183b5d;font-size:25px;font-weight:800;letter-spacing:-.6px}
+.home-plan-price small{font-size:10px;font-weight:600;letter-spacing:0;color:#718095}
+.home-plan-www{margin:9px 0 18px;color:#63758a;font-size:11px}
+.home-plan-www strong{color:#315f89}
+.plan-link{display:inline-flex;align-items:center;justify-content:space-between;gap:8px;margin-top:auto;padding-top:12px;border-top:1px solid #e4e9ef;color:#244f76;text-decoration:none;font-size:11px;font-weight:750}
+.plan-link:hover{text-decoration:underline}
+.plan-disclaimer{margin:17px 0 0;color:#68778a;font-size:11px;line-height:1.8}
+.access-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;margin-top:27px}
+.access-option{padding:23px;border:1px solid #dce2e9;border-radius:6px;background:#fff}
+.access-option h3{margin:0 0 8px;color:#263c55;font-size:16px}
+.access-option p{min-height:42px;margin:0 0 18px;color:#68778a;font-size:11px;line-height:1.8}
+.plans-button{display:inline-flex;min-height:42px;align-items:center;justify-content:center;gap:12px;padding:0 18px;border:1px solid #9aafc3;border-radius:5px;background:transparent;color:#244665;text-decoration:none;font-size:12px;font-weight:700;transition:background .18s ease,transform .18s ease}
+.plans-button:hover{background:#edf4fa;transform:translateY(-2px)}
+[data-theme=dark] .home-plan-card,[data-theme=dark] .access-option{background:#0a0a0a;border-color:#303b47}
+[data-theme=dark] .home-plan-card h3,[data-theme=dark] .access-option h3{color:#e0e9f2}
+[data-theme=dark] .home-plan-count,[data-theme=dark] .home-plan-www,[data-theme=dark] .plan-disclaimer,[data-theme=dark] .access-option p{color:#aab8c6}
+[data-theme=dark] .home-plan-price{color:#e5edf5}
+[data-theme=dark] .home-plan-www strong,[data-theme=dark] .plan-link{color:#9bc3e8}
+[data-theme=dark] .plan-link{border-color:#304254}
+[data-theme=dark] .plans-button{background:#111;border-color:#50677e;color:#dce8f4}
+[data-theme=dark] .plans-button:hover{background:#122033}
+@media(max-width:900px){.plan-grid-home{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.landing-hero{padding:62px 5px 50px}.access-actions{grid-template-columns:1fr}}
+@media(max-width:480px){.plan-grid-home{grid-template-columns:1fr}.home-plan-card{padding:19px}.access-option{padding:20px}}
