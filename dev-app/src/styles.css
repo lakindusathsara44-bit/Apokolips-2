@@ -139,6 +139,14 @@
 
 /* Table builder: visual editing for non-coders and advanced attribute mode */
 .table-builder-tools{display:grid;gap:14px;margin-top:12px}
+.table-border-controls{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;min-width:0;padding:11px;border:1px solid #2d4052;border-radius:6px;background:#101923}
+.table-border-controls .table-attribute-title{grid-column:1/-1}
+.table-border-controls label{display:block;min-width:0;color:#aebfd0;font-size:9px}
+.table-border-controls input,.table-border-controls select{box-sizing:border-box;width:100%;min-width:0;margin-top:5px;padding:7px 6px;border:1px solid #35495c;border-radius:3px;background:#080e15;color:#e5edf5;font:inherit;font-size:10px}
+.table-border-controls input[type=color]{height:32px;padding:3px}
+.builder-canvas .builder-table{width:100%;border-collapse:collapse;border-spacing:0}
+.builder-canvas .builder-table th,.builder-canvas .builder-table td{border:var(--table-border-width,1px) var(--table-border-style,solid) var(--table-border-color,#d7e0e8);padding:10px;text-align:left;vertical-align:top}
+.builder-canvas .builder-table th{background:#edf2f8;font-weight:700}
 .table-data-editor,.table-attribute-editor{min-width:0;padding:11px;border:1px solid #2d4052;border-radius:6px;background:#101923}
 .table-attribute-title{display:flex;flex-direction:column;gap:4px;margin-bottom:10px;color:#dce8f3;font-size:11px}
 .table-attribute-title small{color:#8296aa;font-size:9px;font-weight:400;line-height:1.5}
