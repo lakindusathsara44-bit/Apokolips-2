@@ -17,7 +17,7 @@ create table if not exists public.builder_domains (
   constraint builder_domains_domain_format check (
     domain = lower(domain)
     and char_length(domain) between 4 and 253
-    and domain ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$'
+    and domain ~ '^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?(\.[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?)+$'
   ),
   constraint builder_domains_type_suffix check (
     (domain_type = 'apokolips_subdomain' and domain like '%.apokolips.xyz' and domain <> 'apokolips.xyz')
