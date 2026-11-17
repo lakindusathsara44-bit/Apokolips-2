@@ -4,6 +4,10 @@ on:
   pull_request:
     paths:
       - "dev-app/src/domains/**"
+      - "sales-app/src/main.jsx"
+      - "cloudflare/domain-router/**"
+      - "supabase/functions/domain-control/**"
+      - "supabase/migrations/**"
       - "package.json"
       - ".github/workflows/domain-validation.yml"
   push:
@@ -11,6 +15,10 @@ on:
       - main
     paths:
       - "dev-app/src/domains/**"
+      - "sales-app/src/main.jsx"
+      - "cloudflare/domain-router/**"
+      - "supabase/functions/domain-control/**"
+      - "supabase/migrations/**"
       - "package.json"
       - ".github/workflows/domain-validation.yml"
 
@@ -23,6 +31,6 @@ jobs:
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - name: Run hostname validation tests
+          node-version: 22
+      - name: Run domain and router regression tests
         run: npm test
