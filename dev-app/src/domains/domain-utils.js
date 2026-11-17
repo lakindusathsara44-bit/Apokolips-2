@@ -28,6 +28,7 @@ const RESERVED_APOKOLIPS_LABELS = new Set([
 export const DOMAIN_STATUSES = [
   { value: 'pending_setup', label: 'Pending setup' },
   { value: 'verified', label: 'Verified' },
+  { value: 'provisioning', label: 'Provisioning' },
   { value: 'active', label: 'Active' },
   { value: 'suspended', label: 'Suspended' }
 ];
@@ -104,7 +105,8 @@ export function domainStatusLabel(status) {
 export function domainStatusNote(status) {
   return ({
     pending_setup: 'Add the TXT ownership record, then request verification. Routing and SSL are still pending.',
-    verified: 'Ownership is verified. The hostname is not live until routing and SSL are configured.',
+    verified: 'Ownership is verified. Start hostname and SSL provisioning to continue.',
+    provisioning: 'Cloudflare is validating the hostname and SSL certificate. Add the requested DNS records, then check status again.',
     active: 'This hostname is active on Apokolips hosting.',
     suspended: 'This hostname is suspended. Contact Apokolips support before changing DNS.'
   })[status] || 'The domain status is not recognised. Contact Apokolips support.';
