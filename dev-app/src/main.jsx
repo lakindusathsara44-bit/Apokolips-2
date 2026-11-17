@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { supabase } from './lib/supabase.js';
 import BuilderEditor from './builder/BuilderEditor.jsx';
+import DomainsPanel from './domains/DomainsPanel.jsx';
 import './styles.css';
 
 const HOST = 'www.sales.apokolips.xyz';
@@ -110,6 +111,8 @@ function App() {
   const previewUrl = useMemo(() => 'https://' + HOST + '/' + (slug || 'your-project'), [slug]);
   const activeWorkspace = workspaces.find(item => item.id === workspaceId);
   const activeRole = memberships.find(item => item.workspace_id === workspaceId)?.role || 'member';
+  const handleDomainError = useCallback(message => setError(message), []);
+  const handleDomainNotice = useCallback(message => { setError(''); setNotice(message); }, []);
 
   const loadWorkspace = useCallback(async (currentUser) => {
     setDataLoading(true);
@@ -300,7 +303,7 @@ function App() {
           </section>
         </>}
 
-        {activeTab === 'domains' && <section className="section-block empty-state"><div className="empty-icon">⌁</div><h2>Domain management</h2><p>Custom domain verification, DNS routing and SSL provisioning will be connected with the Apokolips hosting engine.</p></section>}
+        {activeTab === 'domains' && <section className="section-block"><DomainsPanel workspaceId={workspaceId} projects={visibleProjects} role={activeRole} onNotice={handleDomainNotice} onError={handleDomainError} /></section>}
         {activeTab === 'settings' && <section className="section-block settings-panel"><div className="section-title"><div><h2>Account & workspace</h2><p>Your signed-in Apokolips identity and workspace information.</p></div></div><div className="settings-row"><span>Account email</span><strong>{user.email}</strong></div><div className="settings-row"><span>Display name</span><strong>{profile?.display_name || 'Not set'}</strong></div><div className="settings-row"><span>Workspace</span><strong>{activeWorkspace?.name || 'No workspace selected'}</strong></div><div className="settings-row"><span>Workspace role</span><strong>{activeRole}</strong></div><button className="secondary-button settings-signout" onClick={signOut}>Sign out</button></section>}
 
         <footer className="footer"><span>© {new Date().getFullYear()} APOKOLIPS</span><span>DEV WORKSPACE · PHASE 1</span></footer>
