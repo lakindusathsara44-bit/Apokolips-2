@@ -51,7 +51,6 @@ export default function DomainsPanel({ workspaceId, projects, role, onNotice, on
   const [domains, setDomains] = useState([]);
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [removingId, setRemovingId] = useState('');
   const [operating, setOperating] = useState('');
   const [kind, setKind] = useState('custom_domain');
   const [domain, setDomain] = useState('');
@@ -174,21 +173,9 @@ export default function DomainsPanel({ workspaceId, projects, role, onNotice, on
 
   async function removeDomain(id) {
     const item = domains.find(domainItem => domainItem.id === id);
-    if (!item || removingId || operating) return;
-    if (!window.confirm('Remove ' + item.domain + ' from this workspace? This does not change DNS records at your registrar or delete a Cloudflare hostname already created.')) return;
-
-    setRemovingId(id);
-    try {
-      const { error } = await supabase.from('builder_domains')
-        .delete().eq('id', id).eq('workspace_id', workspaceId);
-      if (error) throw error;
-      onNotice('Domain request removed from Apokolips. Any external DNS and Cloudflare resources must be cleaned up separately.');
-      await load();
-    } catch (error) {
-      onError(readableError(error));
-    } finally {
-      setRemovingId('');
-    }
+    if (!item || operating) return;
+    if (!window.confirm('Remove ' + item.domain + ' and delete any Cloudflare hostname provisioned for it? This cannot remove DNS records at the customer\'s registrar.')) return;
+    await runDomainAction(item, 'remove');
   }
 
   async function copy(value) {
@@ -202,7 +189,7 @@ export default function DomainsPanel({ workspaceId, projects, role, onNotice, on
 
   function actionButton(item, action, label, busyLabel) {
     const isBusy = operating === item.id + ':' + action;
-    return <button className="secondary-button" type="button" onClick={() => runDomainAction(item, action)} disabled={Boolean(operating) || saving || removingId !== ''}>
+    return <button className="secondary-button" type="button" onClick={() => runDomainAction(item, action)} disabled={Boolean(operating) || saving}>
       {isBusy ? busyLabel : label}
     </button>;
   }
@@ -214,7 +201,7 @@ export default function DomainsPanel({ workspaceId, projects, role, onNotice, on
         <h2>Your domains</h2>
         <p>Register custom domains, customer-owned subdomains, and Apokolips subdomains for your websites.</p>
       </div>
-      {canManage && <button className="primary-button" onClick={() => setShowForm(value => !value)} disabled={!projects.length || Boolean(operating) || Boolean(removingId)}>
+      {canManage && <button className="primary-button" onClick={() => setShowForm(value => !value)} disabled={!projects.length || Boolean(operating)}>
         {showForm ? 'Cancel' : '＋ Add domain'}
       </button>}
     </div>
@@ -339,8 +326,8 @@ export default function DomainsPanel({ workspaceId, projects, role, onNotice, on
               {item.status === 'verified' && actionButton(item, 'provision', 'Provision hostname + SSL', 'Starting…')}
               {item.status === 'provisioning' && actionButton(item, 'refresh', 'Check provisioning status', 'Checking…')}
               {item.status === 'active' && <a className="secondary-button domain-visit" href={'https://' + item.domain + '/'} target="_blank" rel="noopener noreferrer">Visit website</a>}
-              <button className="domain-remove" type="button" onClick={() => removeDomain(item.id)} disabled={Boolean(removingId) || Boolean(operating)}>
-                {removingId === item.id ? 'Removing…' : 'Remove request'}
+              <button className="domain-remove" type="button" onClick={() => removeDomain(item.id)} disabled={Boolean(operating)}>
+                {operating === item.id + ':remove' ? 'Removing…' : 'Remove request'}
               </button>
             </div>}
           </article>;
