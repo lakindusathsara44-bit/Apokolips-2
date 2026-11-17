@@ -39,7 +39,7 @@ export function normalizeDomain(value) {
   const withoutScheme = raw.replace(/^https?:\/\//i, '').replace(/\/+$/, '');
   // Keep path/query/credential input intact so validation rejects it instead
   // of silently registering a different hostname than the user entered.
-  if (/[/?#@\\]/.test(withoutScheme)) return withoutScheme.toLowerCase();
+  if (/[/?#@]/.test(withoutScheme) || withoutScheme.includes('\\') || withoutScheme.includes(':')) return withoutScheme.toLowerCase();
 
   const withoutFinalDot = withoutScheme.replace(/\.$/, '');
   try {
