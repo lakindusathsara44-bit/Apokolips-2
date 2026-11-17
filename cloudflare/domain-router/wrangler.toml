@@ -1,0 +1,14 @@
+name = "apokolips-domain-router"
+main = "src/index.js"
+compatibility_date = "2026-11-17"
+workers_dev = false
+
+[vars]
+SUPABASE_URL = "https://qccbsuxomdqdwfnqoycb.supabase.co"
+ORIGIN_BASE = "https://www.sales.apokolips.xyz"
+
+# Set SUPABASE_PUBLISHABLE_KEY with:
+#   npx wrangler secret put SUPABASE_PUBLISHABLE_KEY
+#
+# After Cloudflare for SaaS is enabled for apokolips.xyz, attach this Worker
+# to the provider zone's wildcard route. See docs/domain-management.md.
