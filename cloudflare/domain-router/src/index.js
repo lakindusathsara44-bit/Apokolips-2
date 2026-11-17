@@ -145,7 +145,11 @@ export async function handleRequest(request, env, fetcher = globalThis.fetch) {
     });
   }
 
-  return serveSalesApp(request, requestUrl, configValue, fetcher);
+  try {
+    return await serveSalesApp(request, requestUrl, configValue, fetcher);
+  } catch {
+    return json({ error: "static_origin_unavailable" }, 502);
+  }
 }
 
 export default {
