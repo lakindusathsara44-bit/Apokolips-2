@@ -84,7 +84,7 @@ Deno.serve(async (request: Request) => {
     const action = String(body.action || "");
     const domainId = String(body.domainId || "");
     if (!domainId || domainId.length > 80) return json({ error: "domain_id_required" }, 400);
-    if (!["verify", "provision", "refresh"].includes(action)) return json({ error: "unsupported_action" }, 400);
+    if (!["verify", "provision", "refresh", "remove"].includes(action)) return json({ error: "unsupported_action" }, 400);
 
     const admin = createClient(url, secretKey, { auth: { persistSession: false, autoRefreshToken: false } });
     const { data: domain, error: domainError } = await admin.from("builder_domains")
@@ -99,6 +99,41 @@ Deno.serve(async (request: Request) => {
     if (membershipError) throw membershipError;
     if (!membership || !["owner", "editor"].includes(membership.role)) {
       return json({ error: "domain_management_forbidden" }, 403);
+    }
+
+    if (action === "remove") {
+      if (domain.cloudflare_hostname_id) {
+        const apiToken = Deno.env.get("CLOUDFLARE_API_TOKEN") || "";
+        const zoneId = Deno.env.get("CLOUDFLARE_ZONE_ID") || "";
+        if (!apiToken || !zoneId) {
+          return json({
+            error: "cloudflare_not_configured",
+            status: domain.status,
+            message: "This domain already has a Cloudflare hostname. Configure the Cloudflare API token and zone ID before removing it so Apokolips can clean up the provider resource safely."
+          }, 503);
+        }
+        const deleteResponse = await fetch(
+          "https://api.cloudflare.com/client/v4/zones/" + encodeURIComponent(zoneId) + "/custom_hostnames/" + encodeURIComponent(domain.cloudflare_hostname_id),
+          {
+            method: "DELETE",
+            headers: { Authorization: "Bearer " + apiToken, Accept: "application/json" },
+            signal: AbortSignal.timeout(12000)
+          }
+        );
+        const deletePayload = await deleteResponse.json().catch(() => ({}));
+        if (!deleteResponse.ok || deletePayload?.success === false) {
+          const details = (deletePayload?.errors || []).map((item: any) => item.message).filter(Boolean).join("; ");
+          throw new Error(details || "Cloudflare could not remove the custom hostname. The Apokolips domain record was kept.");
+        }
+      }
+
+      const { error: deleteError } = await admin.from("builder_domains").delete().eq("id", domain.id);
+      if (deleteError) throw deleteError;
+      return json({
+        ok: true,
+        status: "removed",
+        message: "The domain request and any provisioned Cloudflare hostname were removed. Remove the TXT/CNAME records from the customer's DNS provider separately."
+      });
     }
 
     if (action === "verify") {
