@@ -73,7 +73,8 @@ export function validateDomainInput(value, kind) {
   }
   if (kind === 'apokolips_subdomain') {
     const prefix = domain.slice(0, -AP_OKOLIPS_SUFFIX.length);
-    if (!prefix || RESERVED_APOKOLIPS_LABELS.has(prefix) || RESERVED_APOKOLIPS_DOMAINS.has(domain)) {
+    const prefixLabels = prefix.split('.');
+    if (!prefix || prefixLabels.some(label => RESERVED_APOKOLIPS_LABELS.has(label)) || RESERVED_APOKOLIPS_DOMAINS.has(domain)) {
       return { domain, error: 'That Apokolips address is reserved for platform services.' };
     }
   }
