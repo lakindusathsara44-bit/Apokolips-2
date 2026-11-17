@@ -34,7 +34,7 @@ test('requires Apokolips addresses to use the platform suffix', () => {
 });
 
 test('protects platform-owned hostnames', () => {
-  for (const value of ['sales.apokolips.xyz', 'www.sales.apokolips.xyz', 'learn.english.apokolips.xyz', 'api.apokolips.xyz']) {
+  for (const value of ['sales.apokolips.xyz', 'www.sales.apokolips.xyz', 'learn.english.apokolips.xyz', 'api.apokolips.xyz', 'www.project.apokolips.xyz', 'api.project.apokolips.xyz']) {
     assert.notEqual(validateDomainInput(value, 'apokolips_subdomain').error, '');
   }
 });
