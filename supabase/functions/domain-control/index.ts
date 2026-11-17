@@ -230,6 +230,23 @@ Deno.serve(async (request: Request) => {
           }
         );
         hostnameResult = parseCloudflareResponse(await createResponse.json());
+
+        // Cloudflare may populate validation records only after hostname creation.
+        // Refresh once immediately so the dashboard can show DNS instructions.
+        if (hostnameResult.id) {
+          try {
+            const detailsResponse = await fetch(
+              "https://api.cloudflare.com/client/v4/zones/" + encodeURIComponent(zoneId) + "/custom_hostnames/" + encodeURIComponent(hostnameResult.id),
+              { headers: { Authorization: "Bearer " + apiToken, Accept: "application/json" }, signal: AbortSignal.timeout(12000) }
+            );
+            if (detailsResponse.ok) {
+              const detailsPayload = await detailsResponse.json();
+              if (detailsPayload?.success && detailsPayload?.result) hostnameResult = detailsPayload.result;
+            }
+          } catch {
+            // Keep the successful create response; the user can refresh provisioning later.
+          }
+        }
       }
 
       const validationRecords = Array.isArray(hostnameResult.ssl?.validation_records) ? hostnameResult.ssl.validation_records : [];
