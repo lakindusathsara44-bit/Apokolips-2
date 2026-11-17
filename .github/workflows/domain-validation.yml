@@ -1,0 +1,28 @@
+name: Domain validation
+
+on:
+  pull_request:
+    paths:
+      - "dev-app/src/domains/**"
+      - "package.json"
+      - ".github/workflows/domain-validation.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "dev-app/src/domains/**"
+      - "package.json"
+      - ".github/workflows/domain-validation.yml"
+
+jobs:
+  domain-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run hostname validation tests
+        run: npm test
