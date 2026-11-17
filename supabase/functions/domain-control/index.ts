@@ -200,7 +200,8 @@ Deno.serve(async (request: Request) => {
       const validationRecords = Array.isArray(hostnameResult.ssl?.validation_records) ? hostnameResult.ssl.validation_records : [];
       const hostnameStatus = String(hostnameResult.status || "pending");
       const sslStatus = String(hostnameResult.ssl?.status || "pending_validation");
-      const activated = hostnameStatus === "active" && sslStatus === "active";
+      const routerReady = Deno.env.get("APOKOLIPS_WILDCARD_ROUTING_READY") === "true";
+      const activated = hostnameStatus === "active" && sslStatus === "active" && routerReady;
       const { error: updateError } = await admin.from("builder_domains").update({
         status: activated ? "active" : "provisioning",
         cloudflare_hostname_id: hostnameResult.id || domain.cloudflare_hostname_id,
@@ -216,7 +217,11 @@ Deno.serve(async (request: Request) => {
       return json({
         ok: true, status: activated ? "active" : "provisioning", hostnameStatus, sslStatus, cnameTarget,
         validationRecords, ownershipVerification: hostnameResult.ownership_verification || null,
-        message: activated ? "Cloudflare confirms the hostname and SSL certificate are active." : "Cloudflare is provisioning the hostname. Add the displayed DNS records, then check status again."
+        message: activated
+          ? "Cloudflare confirms the hostname, SSL certificate and Apokolips router are active."
+          : hostnameStatus === "active" && sslStatus === "active"
+            ? "Cloudflare has issued the certificate, but Apokolips hostname routing is not enabled yet."
+            : "Cloudflare is provisioning the hostname. Add the displayed DNS records, then check status again."
       });
     }
 
@@ -243,7 +248,8 @@ Deno.serve(async (request: Request) => {
     const hostnameStatus = String(refreshed.status || "pending");
     const sslStatus = String(refreshed.ssl?.status || "pending_validation");
     const validationRecords = Array.isArray(refreshed.ssl?.validation_records) ? refreshed.ssl.validation_records : (domain.cloudflare_validation_records || []);
-    const activated = hostnameStatus === "active" && sslStatus === "active";
+    const routerReady = Deno.env.get("APOKOLIPS_WILDCARD_ROUTING_READY") === "true";
+    const activated = hostnameStatus === "active" && sslStatus === "active" && routerReady;
     const { error: updateError } = await admin.from("builder_domains").update({
       status: activated ? "active" : "provisioning",
       cloudflare_hostname_status: hostnameStatus,
@@ -258,7 +264,11 @@ Deno.serve(async (request: Request) => {
       ok: true, status: activated ? "active" : "provisioning", hostnameStatus, sslStatus,
       cnameTarget: domain.cname_target, validationRecords,
       ownershipVerification: refreshed.ownership_verification || null,
-      message: activated ? "Cloudflare confirms the hostname and SSL certificate are active." : "The hostname is still provisioning. Complete the requested DNS changes and try again."
+      message: activated
+        ? "Cloudflare confirms the hostname, SSL certificate and Apokolips router are active."
+        : hostnameStatus === "active" && sslStatus === "active"
+          ? "Cloudflare has issued the certificate, but Apokolips hostname routing is not enabled yet."
+          : "The hostname is still provisioning. Complete the requested DNS changes and try again."
     });
   } catch (error) {
     console.error("domain-control failed:", error);
