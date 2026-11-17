@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { handleRequest } from './src/index.js';
+import { handleRequest } from '../src/index.js';
 
 const env = {
   SUPABASE_URL: 'https://project-ref.supabase.co',
