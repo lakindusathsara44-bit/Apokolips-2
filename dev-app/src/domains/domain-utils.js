@@ -44,7 +44,7 @@ export function normalizeDomain(value) {
   const withoutFinalDot = withoutScheme.replace(/\.$/, '');
   try {
     const parsed = new URL('https://' + withoutFinalDot);
-    if (parsed.pathname !== '/' || parsed.search || parsed.hash || parsed.username || parsed.password) {
+    if (parsed.pathname !== '/' || parsed.search || parsed.hash || parsed.username || parsed.password || parsed.port) {
       return withoutFinalDot.toLowerCase();
     }
     return parsed.hostname.toLowerCase().replace(/\.$/, '');
