@@ -63,7 +63,7 @@ Do not show a domain as live before the Cloudflare hostname and SSL statuses are
 
 ## Security model
 
-- Browser users can insert only the domain-request columns. They cannot update lifecycle status, provider IDs, SSL state or routing targets.
+- Browser users can insert only the domain-request columns. They cannot update lifecycle status, provider IDs, SSL state or routing targets. They also cannot delete registry rows directly; removal must pass through the authenticated Edge Function so a provisioned Cloudflare hostname is removed first.
 - Authenticated workspace access is protected with RLS. Owners/editors may insert and remove; workspace members can read their own requests.
 - Anonymous public routing can read only \`domain\`, \`website_id\`, and \`status\`, and the policy returns only active domains attached to published Sales websites. TXT tokens and provider validation metadata are not exposed to anonymous visitors.
 - The Edge Function validates the user's bearer token and rechecks owner/editor membership before DNS or Cloudflare operations. Cloudflare credentials and Supabase service credentials remain server-side.
