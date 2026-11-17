@@ -121,7 +121,7 @@ Deno.serve(async (request: Request) => {
           }
         );
         const deletePayload = await deleteResponse.json().catch(() => ({}));
-        if (!deleteResponse.ok || deletePayload?.success === false) {
+        if (deleteResponse.status !== 404 && (!deleteResponse.ok || deletePayload?.success === false)) {
           const details = (deletePayload?.errors || []).map((item: any) => item.message).filter(Boolean).join("; ");
           throw new Error(details || "Cloudflare could not remove the custom hostname. The Apokolips domain record was kept.");
         }
