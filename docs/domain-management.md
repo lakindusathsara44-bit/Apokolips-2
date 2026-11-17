@@ -29,7 +29,7 @@ Apokolips subdomains do not ask customers to publish a TXT record. They stay pen
 - \`cloudflare/domain-router/\`: Cloudflare Worker that resolves active hostnames and routes website requests to the existing static Sales app.
 - \`sales-app/src/main.jsx\`: supports both the legacy shared path (\`www.sales.apokolips.xyz/<site-slug>/<page>\`) and custom-host paths (\`https://customer-domain/<page>\`).
 
-The Edge Function is deployed to Supabase as \`domain-control\` with JWT verification enabled. It is currently version 5.
+The Edge Function is deployed to Supabase as \`domain-control\` with JWT verification enabled. It is currently version 6.
 
 ## Cloudflare setup still required
 
