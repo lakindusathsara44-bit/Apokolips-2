@@ -1,22 +1,39 @@
 # Apokolips Domain Management
 
-## Included in this phase
+## Current capability
 
-- Workspace-scoped domain request registry for custom apex domains, customer-owned subdomains, and `*.apokolips.xyz` subdomains.
-- Website association, unique-domain constraint, generated TXT ownership challenge, and workspace-member RLS.
-- Owner/editor-only create and remove controls; viewers can inspect requests.
-- Dashboard clearly labels every new request as **Pending setup**.
+- Workspace-scoped records for custom apex domains, customer-owned subdomains, and Apokolips subdomains.
+- A website association, globally unique hostname constraint, and a per-domain DNS TXT ownership challenge.
+- Owner/editor-only create and remove controls; workspace viewers can inspect records.
+- Domain normalization supports case-insensitive input, optional HTTP(S) schemes, trailing DNS dots, and internationalized hostnames converted to IDNA ASCII.
+- Status-aware filtering and status messaging for \`pending_setup\`, \`verified\`, \`active\`, and \`suspended\`.
+- Database row-level security restricts records to members of their workspace. Only owners and editors may create or remove records.
 
-## Existing-hosting limitation
+## Hosting limitation
 
-The current production endpoint is a static/shared host at `www.sales.apokolips.xyz` and customer sites are addressed by URL path. This deployment does not currently include wildcard host routing, a domain-aware reverse proxy, automated DNS lookup/verification, or automated certificate provisioning. Therefore this phase deliberately does **not** mark any domain verified or active and does not instruct customers to point production traffic at the shared endpoint.
+The current production endpoint is a static/shared host at \`www.sales.apokolips.xyz\`, and customer sites are addressed by URL path, for example \`www.sales.apokolips.xyz/<site-slug>\`.
 
-To complete activation, the platform needs a hostname-aware routing layer (for example, an edge proxy/worker or hosting provider feature), a server-side DNS TXT verifier, and automated certificate issuance/renewal. Once that infrastructure is selected and deployed, the existing registry can be extended to transition `pending_setup -> verified -> active`.
+The dashboard and database are now connected, and domain requests can be registered. However, this deployment does not yet include:
+- Hostname-aware routing or a multi-tenant reverse proxy.
+- Server-side DNS TXT verification.
+- Automated SSL certificate issuance and renewal.
 
-## Apply the migration
+Therefore new requests remain **Pending setup**. Do not point a customer domain at the shared host, and do not represent a request as live, until a hostname routing target and certificate process are deployed.
 
-Run `supabase/migrations/20261117120000_domain_management_foundation.sql` against the connected Supabase project after the existing builder migrations. No service-role key or secrets are required by the browser client.
+## Supabase migrations
+
+The production Supabase project has these migrations applied:
+- \`20261117112409_domain_management_foundation\`
+- \`20261117112451_domain_management_validation\`
+
+The foundation migration creates \`public.builder_domains\` with RLS, owner/editor write policies, workspace-member read policy, explicit authenticated grants, and indexes. The validation migration keeps the hostname expression valid for DNS labels and indexes the creator foreign key.
 
 ## TXT challenge
 
-Each request stores a unique value in `verification_token`. The intended TXT owner name is `_apokolips-verify.<registered-domain>`. DNS verification is a later server-side step; the dashboard currently displays the challenge for support review and does not claim it has been checked.
+Each request stores a random value in \`verification_token\`. The intended TXT owner name is \`_apokolips-verify.<registered-domain>\`.
+
+The dashboard currently displays the TXT name and value so a customer or support operator can configure and inspect it. DNS lookup and verification are not automated yet; the UI does not claim a record has been checked.
+
+## Verification
+
+Run \`npm test\` to execute the hostname normalization and validation regression tests. Run \`npm run build\` to build the existing index, developer workspace, and sales app.
