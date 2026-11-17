@@ -17,7 +17,7 @@ test('normalizes internationalized domains to ASCII IDNA form', () => {
 });
 
 test('rejects paths, credentials, ports and malformed hostnames', () => {
-  for (const value of ['example.com/path', 'user@example.com', 'example.com:8080', 'example..com', 'not a domain', '127.0.0.1']) {
+  for (const value of ['example.com/path', 'user@example.com', 'example.com:8080', 'example.com:443', 'example..com', 'not a domain', '127.0.0.1']) {
     assert.notEqual(validateDomainInput(value, 'custom_domain').error, '');
   }
 });
