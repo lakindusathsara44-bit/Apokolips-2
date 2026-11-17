@@ -46,6 +46,7 @@ test('generates a database-compatible verification token', () => {
 
 test('maps known statuses and makes future states explicit', () => {
   assert.equal(domainStatusLabel('active'), 'Active');
+  assert.equal(domainStatusLabel('provisioning'), 'Provisioning');
   assert.match(domainStatusNote('verified'), /not live/i);
   assert.equal(domainStatusLabel('unexpected'), 'Unknown status');
 });
