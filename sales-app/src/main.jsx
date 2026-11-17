@@ -84,22 +84,77 @@ function App() {
   useEffect(() => {
     let alive = true;
     async function load() {
-      const parts = window.location.pathname.split('/').filter(Boolean);
-      const siteSlug = safeSegment(parts[0] || '');
-      const pageSlug = safeSegment(parts[1] || 'home') || 'home';
-      if (!siteSlug) { if (alive) setState({ loading:false, website:null, page:null, blocks:[], error:'This page is not available.' }); return; }
-      const { data: site, error: siteError } = await supabase.from('builder_websites')
-        .select('id,name,slug,status').eq('slug', siteSlug).eq('hosting_namespace','sales').eq('status','published').maybeSingle();
-      if (siteError || !site) { if (alive) setState({ loading:false, website:null, page:null, blocks:[], error:'This website is unavailable or has not been published.' }); return; }
-      const pageQuery = supabase.from('builder_website_pages').select('id,title,slug,is_homepage,settings')
-        .eq('website_id', site.id);
-      const { data: page, error: pageError } = pageSlug === 'home'
-        ? await pageQuery.eq('is_homepage', true).maybeSingle()
-        : await pageQuery.eq('slug', pageSlug).maybeSingle();
-      if (pageError || !page) { if (alive) setState({ loading:false, website:site, page:null, blocks:[], error:'This page could not be found.' }); return; }
-      const { data: blocks, error: blocksError } = await supabase.from('builder_page_components')
-        .select('id,component_type,properties,sort_order').eq('page_id', page.id).order('sort_order');
-      if (alive) setState({ loading:false, website:site, page, blocks:blocksError ? [] : (blocks || []), error:blocksError ? 'This page could not be loaded.' : '' });
+      try {
+        const parts = window.location.pathname.split('/').filter(Boolean);
+        const hostname = window.location.hostname.toLowerCase();
+        const isSharedSalesHost = hostname === 'www.sales.apokolips.xyz';
+        let pageSlug = 'home';
+        let site = null;
+
+        if (isSharedSalesHost) {
+          const siteSlug = safeSegment(parts[0] || '');
+          pageSlug = parts[1] ? safeSegment(parts[1]) : 'home';
+          if (!siteSlug || !pageSlug || parts.length > 2) {
+            if (alive) setState({ loading:false, website:null, page:null, blocks:[], error:'This page is not available.' });
+            return;
+          }
+          const { data, error: siteError } = await supabase.from('builder_websites')
+            .select('id,name,slug,status')
+            .eq('slug', siteSlug).eq('hosting_namespace','sales').eq('status','published').maybeSingle();
+          if (siteError) throw siteError;
+          site = data;
+        } else {
+          pageSlug = parts[0] ? safeSegment(parts[0]) : 'home';
+          if (!pageSlug || parts.length > 1) {
+            if (alive) setState({ loading:false, website:null, page:null, blocks:[], error:'This page is not available.' });
+            return;
+          }
+
+          const { data: domainRow, error: domainError } = await supabase.from('builder_domains')
+            .select('website_id')
+            .eq('domain', hostname).eq('status', 'active').maybeSingle();
+          if (domainError) throw domainError;
+          if (!domainRow?.website_id) {
+            if (alive) setState({ loading:false, website:null, page:null, blocks:[], error:'This domain is not connected to an active Apokolips website.' });
+            return;
+          }
+
+          const { data, error: siteError } = await supabase.from('builder_websites')
+            .select('id,name,slug,status')
+            .eq('id', domainRow.website_id).eq('hosting_namespace','sales').eq('status','published').maybeSingle();
+          if (siteError) throw siteError;
+          site = data;
+        }
+
+        if (!site) {
+          if (alive) setState({ loading:false, website:null, page:null, blocks:[], error:'This website is unavailable or has not been published.' });
+          return;
+        }
+
+        const pageQuery = supabase.from('builder_website_pages').select('id,title,slug,is_homepage,settings')
+          .eq('website_id', site.id);
+        const { data: page, error: pageError } = pageSlug === 'home'
+          ? await pageQuery.eq('is_homepage', true).maybeSingle()
+          : await pageQuery.eq('slug', pageSlug).maybeSingle();
+        if (pageError || !page) {
+          if (alive) setState({ loading:false, website:site, page:null, blocks:[], error:'This page could not be found.' });
+          return;
+        }
+        const { data: blocks, error: blocksError } = await supabase.from('builder_page_components')
+          .select('id,component_type,properties,sort_order').eq('page_id', page.id).order('sort_order');
+        if (alive) setState({
+          loading:false,
+          website:site,
+          page,
+          blocks:blocksError ? [] : (blocks || []),
+          error:blocksError ? 'This page could not be loaded.' : ''
+        });
+      } catch (error) {
+        if (alive) setState({
+          loading:false, website:null, page:null, blocks:[],
+          error: error?.message || 'This website could not be loaded.'
+        });
+      }
     }
     void load();
     return () => { alive = false; };
