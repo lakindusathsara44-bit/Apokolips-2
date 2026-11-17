@@ -71,12 +71,16 @@ test('fails closed when required runtime configuration is missing', async () => 
   assert.equal(response.status, 503);
 });
 
-test('returns 502 when the static origin fails', async () => {
+test('returns 502 when the static origin fails after a valid lookup', async () => {
   const response = await handleRequest(
     new Request('https://customer.example/'),
     env,
-    async () => { throw new Error('origin offline'); }
+    async input => {
+      const url = new URL(typeof input === 'string' ? input : input.url);
+      if (url.hostname === 'project-ref.supabase.co') return Response.json([{ website_id: 'website-123' }]);
+      throw new Error('origin offline');
+    }
   );
-  // Registry failure is surfaced before the origin is used.
-  assert.equal(response.status, 503);
+  assert.equal(response.status, 502);
+  assert.match(await response.text(), /static_origin_unavailable/);
 });
