@@ -1,0 +1,36 @@
+name: Domain validation
+
+on:
+  pull_request:
+    paths:
+      - "dev-app/src/domains/**"
+      - "sales-app/src/main.jsx"
+      - "cloudflare/domain-router/**"
+      - "supabase/functions/domain-control/**"
+      - "supabase/migrations/**"
+      - "package.json"
+      - ".github/workflows/domain-validation.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "dev-app/src/domains/**"
+      - "sales-app/src/main.jsx"
+      - "cloudflare/domain-router/**"
+      - "supabase/functions/domain-control/**"
+      - "supabase/migrations/**"
+      - "package.json"
+      - ".github/workflows/domain-validation.yml"
+
+jobs:
+  domain-validation:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Run domain and router regression tests
+        run: npm test
